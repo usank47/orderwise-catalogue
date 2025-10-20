@@ -143,20 +143,16 @@ const NewOrder = () => {
 
           <div>
             <Label htmlFor="supplier">Supplier</Label>
-            <Input
+            <ComboBox
               id="supplier"
-              list="suppliers-list"
               value={supplier}
-              onChange={(e) => setSupplier(e.target.value)}
+              onChange={(val) => {
+                setSupplier(val);
+                if (val && !supplierOptions.includes(val)) setSupplierOptions((s) => [...s, val]);
+              }}
+              options={supplierOptions}
               placeholder="Select or type supplier"
-              className="mt-1.5"
-              required
             />
-            <datalist id="suppliers-list">
-              {suppliers.map((sup) => (
-                <option key={sup} value={sup} />
-              ))}
-            </datalist>
           </div>
         </div>
 
