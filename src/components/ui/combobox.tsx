@@ -44,12 +44,16 @@ export const ComboBox: React.FC<ComboProps> = ({ id, value, onChange, options, p
         id={id}
         value={input}
         onChange={(e) => {
-          setInput(e.target.value);
+          const val = e.target.value;
+          setInput(val);
           setOpen(true);
-          // do not call onChange here until user confirms or blurs/enters
+          // propagate value live so parent sees typed entries and validation enables
+          onChange(val);
         }}
         onBlur={() => {
-          // keep value as typed
+          // ensure last typed value is propagated
+          onChange(input);
+          setOpen(false);
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
