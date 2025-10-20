@@ -54,16 +54,20 @@ const NewOrder = () => {
     }
   };
 
+  const totalAmount = React.useMemo(() => {
+    return products.reduce((sum, p) => sum + Number(p.price || 0) * Number(p.quantity || 0), 0);
+  }, [products]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!supplier) {
+    if (!supplier || supplier.trim() === '') {
       toast.error('Please select a supplier');
       return;
     }
 
     const invalidProducts = products.filter(
-      (p) => !p.name || !p.category || !p.brand || p.quantity <= 0 || p.price <= 0
+      (p) => !p.name || !p.category || !p.brand || Number(p.quantity) <= 0 || Number(p.price) <= 0
     );
 
     if (invalidProducts.length > 0) {
@@ -71,13 +75,11 @@ const NewOrder = () => {
       return;
     }
 
-    const totalAmount = products.reduce((sum, p) => sum + p.price * p.quantity, 0);
-
     const order: Order = {
       id: crypto.randomUUID(),
       date,
       supplier,
-      products,
+      products: products.map(p => ({ ...p, quantity: Number(p.quantity), price: Number(p.price) })),
       totalAmount,
       createdAt: new Date().toISOString(),
     };
