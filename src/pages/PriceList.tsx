@@ -141,6 +141,7 @@ const PriceList = () => {
                         <TableHead className="text-xs">PRODUCT NAME</TableHead>
                         <TableHead className="text-xs">BRAND</TableHead>
                         <TableHead className="text-xs">SUPPLIER</TableHead>
+                        <TableHead className="text-xs">COMPATIBILITY</TableHead>
                         <TableHead className="text-right text-xs">PRICE</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -151,6 +152,9 @@ const PriceList = () => {
                           <TableCell className="font-medium">{product.name}</TableCell>
                           <TableCell>{product.brand}</TableCell>
                           <TableCell>{product.supplier}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {product.compatibility || '-'}
+                          </TableCell>
                           <TableCell className="text-right font-medium">
                             ${product.price.toFixed(2)}
                           </TableCell>
