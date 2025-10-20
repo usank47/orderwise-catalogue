@@ -156,7 +156,7 @@ const PriceList = () => {
                             {product.compatibility || '-'}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            ${product.price.toFixed(2)}
+                            ₹{product.price.toFixed(2)}
                           </TableCell>
                         </TableRow>
                       ))}

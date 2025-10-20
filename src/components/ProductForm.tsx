@@ -59,7 +59,7 @@ const ProductForm = ({ product, index, onChange, onRemove, showRemove }: Product
             />
           </div>
           <div>
-            <Label htmlFor={`price-${index}`}>Price ($)</Label>
+            <Label htmlFor={`price-${index}`}>Price (₹)</Label>
             <Input
               id={`price-${index}`}
               type="number"

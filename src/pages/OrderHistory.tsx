@@ -73,7 +73,7 @@ const OrderHistory = () => {
                       <div className="flex items-center gap-2">
                         <div className="text-right mr-4">
                           <p className="text-sm text-muted-foreground">Total</p>
-                          <p className="text-xl font-bold text-primary">${order.totalAmount.toFixed(2)}</p>
+                          <p className="text-xl font-bold text-primary">₹{order.totalAmount.toFixed(2)}</p>
                         </div>
                         <Button
                           variant="ghost"
@@ -128,10 +128,10 @@ const OrderHistory = () => {
                               </div>
                               <div className="text-right">
                                 <p className="font-medium">
-                                  ${product.price.toFixed(2)} × {product.quantity}
+                                  ₹{product.price.toFixed(2)} × {product.quantity}
                                 </p>
                                 <p className="text-sm text-primary font-semibold">
-                                  ${(product.price * product.quantity).toFixed(2)}
+                                  ₹{(product.price * product.quantity).toFixed(2)}
                                 </p>
                               </div>
                             </div>
