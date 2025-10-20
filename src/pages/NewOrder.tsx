@@ -116,7 +116,41 @@ const NewOrder = () => {
     };
 
     saveOrder(order);
-    toast.success('Order placed successfully!');
+
+    // After saving, update suggestion lists immediately
+    const orders = getOrders();
+    const suppliersSet = new Set(supplierOptions);
+    const productSet = new Set(productNameOptions);
+    const categorySet = new Set(categoryOptions);
+    const brandSet = new Set(brandOptions);
+    const compSet = new Set(compatibilityOptions);
+
+    suppliersSet.add(order.supplier);
+    order.products.forEach((p) => {
+      if (p.name) productSet.add(p.name);
+      if (p.category) categorySet.add(p.category);
+      if (p.brand) brandSet.add(p.brand);
+      if (p.compatibility) compSet.add(p.compatibility || '');
+    });
+
+    // also include any values from existing orders
+    orders.forEach((o) => {
+      if (o.supplier) suppliersSet.add(o.supplier);
+      o.products.forEach((p) => {
+        if (p.name) productSet.add(p.name);
+        if (p.category) categorySet.add(p.category);
+        if (p.brand) brandSet.add(p.brand);
+        if (p.compatibility) compSet.add(p.compatibility || '');
+      });
+    });
+
+    setSupplierOptions(Array.from(suppliersSet).filter(Boolean));
+    setProductNameOptions(Array.from(productSet).filter(Boolean));
+    setCategoryOptions(Array.from(categorySet).filter(Boolean));
+    setBrandOptions(Array.from(brandSet).filter(Boolean));
+    setCompatibilityOptions(Array.from(compSet).filter(Boolean));
+
+    toast.success('Order uploaded successfully!');
     navigate('/order-history');
   };
 
