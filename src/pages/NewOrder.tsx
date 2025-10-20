@@ -62,6 +62,16 @@ const NewOrder = () => {
     const updated = [...products];
     updated[index] = { ...updated[index], [field]: value };
     setProducts(updated);
+
+    // if user typed a new suggestion, add it locally so it appears for other rows immediately
+    if (typeof value === 'string') {
+      const v = value.trim();
+      if (!v) return;
+      if (field === 'name' && !productNameOptions.includes(v)) setProductNameOptions((s) => [...s, v]);
+      if (field === 'category' && !categoryOptions.includes(v)) setCategoryOptions((s) => [...s, v]);
+      if (field === 'brand' && !brandOptions.includes(v)) setBrandOptions((s) => [...s, v]);
+      if (field === 'compatibility' && !compatibilityOptions.includes(v)) setCompatibilityOptions((s) => [...s, v]);
+    }
   };
 
   const addProduct = () => {
