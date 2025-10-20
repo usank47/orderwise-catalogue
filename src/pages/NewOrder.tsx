@@ -166,6 +166,10 @@ const NewOrder = () => {
               onChange={handleProductChange}
               onRemove={removeProduct}
               showRemove={products.length > 1}
+              productNameOptions={productNameOptions}
+              categoryOptions={categoryOptions}
+              brandOptions={brandOptions}
+              compatibilityOptions={compatibilityOptions}
             />
           ))}
 
