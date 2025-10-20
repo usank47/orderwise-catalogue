@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { getOrders } from '@/lib/storage';
 import { Product } from '@/types/order';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Package, DollarSign } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, Share2, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-type SortOption = 'category' | 'brand' | 'supplier' | 'none';
+type GroupBy = 'category' | 'brand' | 'supplier';
 
 interface ProductWithSupplier extends Product {
   supplier: string;
@@ -15,7 +16,9 @@ interface ProductWithSupplier extends Product {
 }
 
 const PriceList = () => {
-  const [sortBy, setSortBy] = useState<SortOption>('none');
+  const navigate = useNavigate();
+  const [groupBy, setGroupBy] = useState<GroupBy>('category');
+  const [searchQuery, setSearchQuery] = useState('');
   const orders = getOrders();
 
   const allProducts = useMemo(() => {
@@ -32,110 +35,147 @@ const PriceList = () => {
     return products;
   }, [orders]);
 
-  const sortedProducts = useMemo(() => {
-    if (sortBy === 'none') return allProducts;
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery) return allProducts;
+    
+    const query = searchQuery.toLowerCase();
+    return allProducts.filter(
+      (p) =>
+        p.name.toLowerCase().includes(query) ||
+        p.brand.toLowerCase().includes(query) ||
+        p.category.toLowerCase().includes(query) ||
+        p.supplier.toLowerCase().includes(query)
+    );
+  }, [allProducts, searchQuery]);
 
-    return [...allProducts].sort((a, b) => {
-      const aValue = a[sortBy].toLowerCase();
-      const bValue = b[sortBy].toLowerCase();
-      return aValue.localeCompare(bValue);
+  const groupedProducts = useMemo(() => {
+    const groups: Record<string, ProductWithSupplier[]> = {};
+    
+    filteredProducts.forEach((product) => {
+      const key = product[groupBy];
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(product);
     });
-  }, [allProducts, sortBy]);
 
-  const stats = useMemo(() => {
-    const totalValue = allProducts.reduce((sum, p) => sum + p.price * p.quantity, 0);
-    const totalItems = allProducts.reduce((sum, p) => sum + p.quantity, 0);
-    return { totalValue, totalItems };
-  }, [allProducts]);
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [filteredProducts, groupBy]);
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Price List</h1>
-        <p className="text-muted-foreground">View and organize all products from your orders</p>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-3 mb-8">
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <Package className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Items</p>
-              <p className="text-2xl font-bold">{stats.totalItems}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <DollarSign className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Value</p>
-              <p className="text-2xl font-bold">${stats.totalValue.toFixed(2)}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <Label htmlFor="sort">Sort By</Label>
-          <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-            <SelectTrigger id="sort" className="mt-1.5">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-popover">
-              <SelectItem value="none">Default</SelectItem>
-              <SelectItem value="category">Category</SelectItem>
-              <SelectItem value="brand">Brand</SelectItem>
-              <SelectItem value="supplier">Supplier</SelectItem>
-            </SelectContent>
-          </Select>
-        </Card>
-      </div>
-
-      <Card>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Brand</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Unit Price</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedProducts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No products found. Create your first order to get started.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                sortedProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>{product.brand}</TableCell>
-                    <TableCell>{product.supplier}</TableCell>
-                    <TableCell className="text-right">{product.quantity}</TableCell>
-                    <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      ${(product.price * product.quantity).toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+    <div className="min-h-screen bg-background pb-20">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background border-b">
+        <div className="flex items-center justify-center py-4 px-4 relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/')}
+            className="absolute left-4"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </Button>
+          <h1 className="text-xl font-bold">Price List</h1>
         </div>
-      </Card>
+      </div>
+
+      <div className="px-4 py-4 space-y-4">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-muted border-0 h-12"
+          />
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex gap-3">
+          <Button
+            onClick={() => setGroupBy('category')}
+            variant={groupBy === 'category' ? 'default' : 'secondary'}
+            className="flex-1"
+          >
+            Category
+          </Button>
+          <Button
+            onClick={() => setGroupBy('brand')}
+            variant={groupBy === 'brand' ? 'default' : 'secondary'}
+            className="flex-1"
+          >
+            Brand
+          </Button>
+          <Button
+            onClick={() => setGroupBy('supplier')}
+            variant={groupBy === 'supplier' ? 'default' : 'secondary'}
+            className="flex-1"
+          >
+            Supplier
+          </Button>
+        </div>
+
+        {/* Grouped Products */}
+        <div className="space-y-4">
+          {groupedProducts.length === 0 ? (
+            <Card className="p-8">
+              <p className="text-center text-muted-foreground">
+                No products found. Create your first order to get started.
+              </p>
+            </Card>
+          ) : (
+            groupedProducts.map(([groupName, products]) => (
+              <Card key={groupName} className="overflow-hidden">
+                <div className="bg-muted px-4 py-3">
+                  <h2 className="font-bold text-sm uppercase tracking-wide">
+                    {groupName}
+                  </h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="w-16 text-xs">S.NO</TableHead>
+                        <TableHead className="text-xs">PRODUCT NAME</TableHead>
+                        <TableHead className="text-xs">BRAND</TableHead>
+                        <TableHead className="text-xs">SUPPLIER</TableHead>
+                        <TableHead className="text-right text-xs">PRICE</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {products.map((product, index) => (
+                        <TableRow key={product.id}>
+                          <TableCell className="text-muted-foreground">{index + 1}</TableCell>
+                          <TableCell className="font-medium">{product.name}</TableCell>
+                          <TableCell>{product.brand}</TableCell>
+                          <TableCell>{product.supplier}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            ${product.price.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Floating Action Button */}
+      <Button
+        size="icon"
+        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg"
+        onClick={() => {
+          // Share functionality placeholder
+          console.log('Share price list');
+        }}
+      >
+        <Share2 className="w-6 h-6" />
+      </Button>
     </div>
   );
 };
