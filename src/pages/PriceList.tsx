@@ -172,39 +172,41 @@ const PriceList = () => {
 
       {/* Floating Action Button with export options */}
       <div className="fixed bottom-24 right-6 z-50">
-        <Button
-          size="icon"
-          className="h-14 w-14 rounded-full shadow-lg"
-          onClick={() => setShowShareMenu((s) => !s)}
-        >
-          <Share2 className="w-6 h-6" />
-        </Button>
+        <div className="relative">
+          <Button
+            size="icon"
+            className="h-14 w-14 rounded-full shadow-lg"
+            onClick={() => setShowShareMenu((s) => !s)}
+          >
+            <Share2 className="w-6 h-6" />
+          </Button>
 
-        {showShareMenu && (
-          <div className="mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg p-2">
-            <p className="text-sm font-medium px-2 py-1">Export Price List</p>
-            <div className="flex flex-col gap-2 mt-2">
-              <button
-                className="text-left px-3 py-2 rounded hover:bg-muted/50"
-                onClick={() => {
-                  exportToCSV(allProducts);
-                  setShowShareMenu(false);
-                }}
-              >
-                Download Excel (CSV)
-              </button>
-              <button
-                className="text-left px-3 py-2 rounded hover:bg-muted/50"
-                onClick={() => {
-                  exportToPDF(allProducts);
-                  setShowShareMenu(false);
-                }}
-              >
-                Download PDF (Print)
-              </button>
+          {showShareMenu && (
+            <div className="absolute right-0 bottom-full mb-4 w-56 bg-popover border border-border rounded-lg shadow-lg p-2">
+              <p className="text-sm font-medium px-2 py-1">Export Price List</p>
+              <div className="flex flex-col gap-2 mt-2">
+                <button
+                  className="text-left px-3 py-2 rounded hover:bg-muted/50"
+                  onClick={() => {
+                    exportToCSV(allProducts);
+                    setShowShareMenu(false);
+                  }}
+                >
+                  Download Excel (CSV)
+                </button>
+                <button
+                  className="text-left px-3 py-2 rounded hover:bg-muted/50"
+                  onClick={() => {
+                    exportToPDF(allProducts);
+                    setShowShareMenu(false);
+                  }}
+                >
+                  Download PDF (Print)
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
