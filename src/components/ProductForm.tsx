@@ -1,4 +1,5 @@
 import { Product } from '@/types/order';
+import { Product } from '@/types/order';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import React, { useState, useRef, useEffect } from 'react';
