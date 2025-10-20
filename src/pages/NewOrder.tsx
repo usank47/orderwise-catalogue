@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product, Order } from '@/types/order';
-import { saveOrder } from '@/lib/storage';
+import { getOrders, saveOrder } from '@/lib/storage';
 import { Button } from '@/components/ui/button';
+import ComboBox from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ProductForm from '@/components/ProductForm';
 import { Plus, Send } from 'lucide-react';
 import { toast } from 'sonner';
-
-const suppliers = ['Tech Supplies Inc.', 'Global Electronics', 'Prime Distributors', 'Elite Tech Solutions'];
 
 const NewOrder = () => {
   const navigate = useNavigate();
@@ -26,6 +25,38 @@ const NewOrder = () => {
       compatibility: '',
     },
   ]);
+
+  // suggestion options derived from saved orders (price list DB)
+  const [supplierOptions, setSupplierOptions] = useState<string[]>([]);
+  const [productNameOptions, setProductNameOptions] = useState<string[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [brandOptions, setBrandOptions] = useState<string[]>([]);
+  const [compatibilityOptions, setCompatibilityOptions] = useState<string[]>([]);
+
+  React.useEffect(() => {
+    const orders = getOrders();
+    const suppliersSet = new Set<string>();
+    const productSet = new Set<string>();
+    const categorySet = new Set<string>();
+    const brandSet = new Set<string>();
+    const compSet = new Set<string>();
+
+    orders.forEach((o) => {
+      if (o.supplier) suppliersSet.add(o.supplier);
+      o.products?.forEach((p) => {
+        if (p.name) productSet.add(p.name);
+        if (p.category) categorySet.add(p.category);
+        if (p.brand) brandSet.add(p.brand);
+        if (p.compatibility) compSet.add(p.compatibility);
+      });
+    });
+
+    setSupplierOptions(Array.from(suppliersSet));
+    setProductNameOptions(Array.from(productSet));
+    setCategoryOptions(Array.from(categorySet));
+    setBrandOptions(Array.from(brandSet));
+    setCompatibilityOptions(Array.from(compSet));
+  }, []);
 
   const handleProductChange = (index: number, field: keyof Product, value: string | number) => {
     const updated = [...products];
