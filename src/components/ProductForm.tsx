@@ -74,34 +74,24 @@ const ProductForm = ({ product, index, onChange, onRemove, showRemove }: Product
 
         <div>
           <Label htmlFor={`category-${index}`}>Category</Label>
-          <Select value={product.category} onValueChange={(value) => onChange(index, 'category', value)}>
-            <SelectTrigger className="mt-1.5">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover">
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ComboBox
+            id={`category-${index}`}
+            value={product.category || ''}
+            onChange={(val: string) => onChange(index, 'category', val)}
+            options={categories}
+            placeholder="Select or type category"
+          />
         </div>
 
         <div>
           <Label htmlFor={`brand-${index}`}>Brand</Label>
-          <Select value={product.brand} onValueChange={(value) => onChange(index, 'brand', value)}>
-            <SelectTrigger className="mt-1.5">
-              <SelectValue placeholder="Select brand" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover">
-              {brands.map((brand) => (
-                <SelectItem key={brand} value={brand}>
-                  {brand}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ComboBox
+            id={`brand-${index}`}
+            value={product.brand || ''}
+            onChange={(val: string) => onChange(index, 'brand', val)}
+            options={brands}
+            placeholder="Select or type brand"
+          />
         </div>
 
         <div>
