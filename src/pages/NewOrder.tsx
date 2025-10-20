@@ -111,18 +111,20 @@ const NewOrder = () => {
 
           <div>
             <Label htmlFor="supplier">Supplier</Label>
-            <Select value={supplier} onValueChange={setSupplier} required>
-              <SelectTrigger className="mt-1.5">
-                <SelectValue placeholder="Select supplier" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {suppliers.map((sup) => (
-                  <SelectItem key={sup} value={sup}>
-                    {sup}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              id="supplier"
+              list="suppliers-list"
+              value={supplier}
+              onChange={(e) => setSupplier(e.target.value)}
+              placeholder="Select or type supplier"
+              className="mt-1.5"
+              required
+            />
+            <datalist id="suppliers-list">
+              {suppliers.map((sup) => (
+                <option key={sup} value={sup} />
+              ))}
+            </datalist>
           </div>
         </div>
 
