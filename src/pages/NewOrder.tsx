@@ -231,7 +231,7 @@ const NewOrder = () => {
           disabled={products.some(p => !p.name || !p.category || !p.brand || Number(p.quantity) <= 0 || Number(p.price) <= 0) || !supplier}
         >
           <Send className="w-4 h-4 mr-2" />
-          Place Order
+          Upload Order
         </Button>
       </form>
     </div>
