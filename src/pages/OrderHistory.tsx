@@ -14,12 +14,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Calendar, Package, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Calendar, Package, Trash2, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const OrderHistory = () => {
   const [orders, setOrders] = useState(getOrders());
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleDelete = (orderId: string) => {
     deleteOrder(orderId);
@@ -29,6 +32,16 @@ const OrderHistory = () => {
 
   const toggleExpand = (orderId: string) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
+  };
+
+  const openDetails = (order: any) => {
+    setSelectedOrder(order);
+    setDialogOpen(true);
+  };
+
+  const closeDetails = () => {
+    setDialogOpen(false);
+    setSelectedOrder(null);
   };
 
   return (
