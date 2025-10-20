@@ -153,7 +153,18 @@ const NewOrder = () => {
           </Button>
         </div>
 
-        <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity">
+        <div className="mt-4 p-4 bg-muted/20 rounded-lg">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="font-bold text-lg">₹{totalAmount.toFixed(2)}</p>
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
+          disabled={products.some(p => !p.name || !p.category || !p.brand || Number(p.quantity) <= 0 || Number(p.price) <= 0) || !supplier}
+        >
           <Send className="w-4 h-4 mr-2" />
           Place Order
         </Button>
