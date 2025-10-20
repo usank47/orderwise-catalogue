@@ -169,19 +169,141 @@ const PriceList = () => {
         </div>
       </div>
 
-      {/* Floating Action Button */}
-      <Button
-        size="icon"
-        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg"
-        onClick={() => {
-          // Share functionality placeholder
-          console.log('Share price list');
-        }}
-      >
-        <Share2 className="w-6 h-6" />
-      </Button>
+      {/* Floating Action Button with export options */}
+      <div className="fixed bottom-24 right-6 z-50">
+        <Button
+          size="icon"
+          className="h-14 w-14 rounded-full shadow-lg"
+          onClick={() => setShowShareMenu((s) => !s)}
+        >
+          <Share2 className="w-6 h-6" />
+        </Button>
+
+        {showShareMenu && (
+          <div className="mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg p-2">
+            <p className="text-sm font-medium px-2 py-1">Export Price List</p>
+            <div className="flex flex-col gap-2 mt-2">
+              <button
+                className="text-left px-3 py-2 rounded hover:bg-muted/50"
+                onClick={() => {
+                  exportToCSV(allProducts);
+                  setShowShareMenu(false);
+                }}
+              >
+                Download Excel (CSV)
+              </button>
+              <button
+                className="text-left px-3 py-2 rounded hover:bg-muted/50"
+                onClick={() => {
+                  exportToPDF(allProducts);
+                  setShowShareMenu(false);
+                }}
+              >
+                Download PDF (Print)
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
+function escapeCsv(value: any) {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function formatPriceForCsv(price: number) {
+  // Keep numeric value but prefix with rupee symbol for readability
+  return `₹${price.toFixed(2)}`;
+}
+
+function exportToCSV(products: any[]) {
+  const headers = ['S.NO', 'PRODUCT NAME', 'BRAND', 'SUPPLIER', 'COMPATIBILITY', 'CATEGORY', 'PRICE', 'ORDER DATE'];
+  const rows = products.map((p, i) => [
+    i + 1,
+    p.name,
+    p.brand,
+    p.supplier,
+    p.compatibility || '-',
+    p.category || '-',
+    formatPriceForCsv(Number(p.price)),
+    new Date(p.orderDate).toLocaleDateString(),
+  ]);
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(escapeCsv).join(','))
+    .join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `price-list-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportToPDF(products: any[]) {
+  // Open a new window and render a printable table, user can Save as PDF via print dialog
+  const win = window.open('', '_blank', 'noopener,noreferrer');
+  if (!win) {
+    alert('Unable to open print window. Please disable popup blockers and try again.');
+    return;
+  }
+
+  const styles = `
+    <style>
+      body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 20px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 8px 10px; border: 1px solid #e5e7eb; text-align: left; }
+      th { background: #f3f4f6; }
+      .right { text-align: right; }
+    </style>
+  `;
+
+  const header = `<h1>Price List</h1><p>Generated on ${new Date().toLocaleString()}</p>`;
+
+  const tableHeader = `
+    <tr>
+      <th>S.NO</th>
+      <th>PRODUCT NAME</th>
+      <th>BRAND</th>
+      <th>SUPPLIER</th>
+      <th>COMPATIBILITY</th>
+      <th>CATEGORY</th>
+      <th class="right">PRICE</th>
+      <th>ORDER DATE</th>
+    </tr>
+  `;
+
+  const tableRows = products
+    .map((p, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${String(p.name || '-')}</td>
+        <td>${String(p.brand || '-')}</td>
+        <td>${String(p.supplier || '-')}</td>
+        <td>${String(p.compatibility || '-')}</td>
+        <td>${String(p.category || '-')}</td>
+        <td class="right">₹${Number(p.price || 0).toFixed(2)}</td>
+        <td>${new Date(p.orderDate).toLocaleDateString()}</td>
+      </tr>
+    `)
+    .join('');
+
+  const html = `<!doctype html><html><head><meta charset="utf-8">${styles}</head><body>${header}<table>${tableHeader}${tableRows}</table><script>window.onload = function(){ setTimeout(() => { window.print(); }, 200); };</script></body></html>`;
+
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+}
 
 export default PriceList;
