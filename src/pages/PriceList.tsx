@@ -19,6 +19,7 @@ const PriceList = () => {
   const navigate = useNavigate();
   const [groupBy, setGroupBy] = useState<GroupBy>('category');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showShareMenu, setShowShareMenu] = useState(false);
   const orders = getOrders();
 
   const allProducts = useMemo(() => {
