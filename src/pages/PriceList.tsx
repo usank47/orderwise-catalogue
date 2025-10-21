@@ -273,8 +273,8 @@ function exportToCSV(products: any[]) {
     p.supplier,
     p.compatibility || '-',
     p.category || '-',
-    formatPriceForCsv(Number(p.price)),
     formatDate(p.orderDate),
+    formatPriceForCsv(Number(p.price)),
   ]);
 
   const csvContent = [headers, ...rows]
