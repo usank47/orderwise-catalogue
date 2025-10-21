@@ -32,7 +32,8 @@ const Layout = ({ children }: LayoutProps) => {
               OrderFlow
             </h1>
             <div className="flex items-center gap-2">
-              <div className="flex gap-2">
+              {/* top nav links hidden on small screens to avoid duplication with bottom nav */}
+              <div className="hidden md:flex gap-2">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.path;
