@@ -156,7 +156,8 @@ const PriceList = () => {
                     {groupName}
                   </h2>
                 </div>
-                <div className="overflow-x-auto">
+                {/* Desktop table - visible on md and up */}
+                <div className="hidden md:block overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
@@ -185,6 +186,28 @@ const PriceList = () => {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+
+                {/* Mobile stacked list - visible below md */}
+                <div className="md:hidden p-2 space-y-2">
+                  {products.map((product, index) => (
+                    <div key={product.id} className="bg-muted/20 rounded-lg p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <div className="text-sm text-muted-foreground w-8">{index + 1}</div>
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{product.name}</p>
+                              <p className="text-sm text-muted-foreground truncate">{product.brand} · {product.supplier}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right ml-3">
+                          <p className="font-medium">₹{product.price.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </Card>
             ))
