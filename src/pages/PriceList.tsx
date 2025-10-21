@@ -320,7 +320,7 @@ async function exportToPDF(products: any[]) {
         </style>
       `;
 
-      const header = `<div class="top-row"><div class="title">OrderFlow</div><div class="exported">Exported on: ${new Date().toLocaleString()}</div></div>`;
+      const header = `<div class="top-row"><div class="title">OrderFlow</div><div class="exported">Exported on: ${formatDateTime(new Date())}</div></div>`;
 
       const tableHeader = `
         <tr>
@@ -347,7 +347,7 @@ async function exportToPDF(products: any[]) {
             .map((p: any, i: number) => `
               <tr class="table-row">
                 <td style="padding:10px 12px">${i + 1}</td>
-                <td style="padding:10px 12px">${String(p.name || '-')}</td>
+                <td style="padding:10px 12px"><strong>${String(p.name || '-')}</strong></td>
                 <td style="padding:10px 12px">${String(p.brand || '-')}</td>
                 <td style="padding:10px 12px">${String(p.supplier || '-')}</td>
                 <td style="padding:10px 12px">${String(p.compatibility || '-')}</td>
@@ -411,7 +411,7 @@ async function exportToPDF(products: any[]) {
           .map((p: any, i: number) => `
             <tr>
               <td style="padding:10px 12px">${i + 1}</td>
-              <td style="padding:10px 12px">${String(p.name || '-')}</td>
+              <td style="padding:10px 12px"><strong>${String(p.name || '-')}</strong></td>
               <td style="padding:10px 12px">${String(p.brand || '-')}</td>
               <td style="padding:10px 12px">${String(p.supplier || '-')}</td>
               <td style="padding:10px 12px">${String(p.compatibility || '-')}</td>
@@ -429,7 +429,7 @@ async function exportToPDF(products: any[]) {
         <div style="max-width:920px;margin:0 auto;background:#fff;border-radius:10px;padding:18px;border:1px solid #e6e9ed;box-shadow:0 2px 8px rgba(16,24,40,0.06)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <div style="font-size:18px;font-weight:700">OrderFlow</div>
-            <div style="font-size:12px;color:#6b7280">Exported on: ${new Date().toLocaleString()}</div>
+            <div style="font-size:12px;color:#6b7280">Exported on: ${formatDateTime(new Date())}</div>
           </div>
           ${sections}
           <div style="text-align:center;margin-top:18px;color:#9aa0a6;font-size:12px">Page 1 of 1</div>
