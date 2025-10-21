@@ -290,7 +290,7 @@ function exportToCSV(products: any[]) {
 }
 
 async function exportToPDF(products: any[]) {
-  // Try to open print window first (native print). If blocked, fall back to client-side PDF generation using html2canvas + jsPDF.
+  // Try to open print window first (native print). If blocked, fall back to client-side PDF generation using bundled html2canvas + jsPDF.
   const tryOpenPrint = () => {
     try {
       const win = window.open('', '_blank', 'noopener,noreferrer');
@@ -300,43 +300,62 @@ async function exportToPDF(products: any[]) {
         <style>
           body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 20px; }
           table { width: 100%; border-collapse: collapse; }
-          th, td { padding: 8px 10px; border: 1px solid #e5e7eb; text-align: left; }
-          th { background: #f3f4f6; }
+          th, td { padding: 10px 12px; border: 0; text-align: left; }
+          th { background: #eef2f6; padding: 12px 14px; }
+          .category-header { background:#eef6fb; padding:10px 12px; border-radius:4px; margin-bottom:8px; font-weight:600; }
+          .table-row { background: #fff; }
+          .table-row:nth-child(even) { background: #f8fafc; }
           .right { text-align: right; }
+          .page-footer { text-align:center; margin-top:18px; color:#9aa0a6; font-size:12px; }
+          .top-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+          .title { font-size:18px; font-weight:700; }
+          .exported { font-size:12px; color:#6b7280; }
         </style>
       `;
 
-      const header = `<h1>Price List</h1><p>Generated on ${formatDate(new Date())}</p>`;
+      const header = `<div class="top-row"><div class="title">OrderFlow</div><div class="exported">Exported on: ${new Date().toLocaleString()}</div></div>`;
 
       const tableHeader = `
         <tr>
-          <th>S.NO</th>
-          <th>PRODUCT NAME</th>
-          <th>BRAND</th>
-          <th>SUPPLIER</th>
-          <th>COMPATIBILITY</th>
-          <th>CATEGORY</th>
-          <th class="right">PRICE</th>
-          <th>ORDER DATE</th>
+          <th style="width:48px">S. No.</th>
+          <th>Product Name</th>
+          <th>Brand</th>
+          <th>Supplier</th>
+          <th class="right">Price</th>
+          <th>Compatibility</th>
         </tr>
       `;
 
-      const tableRows = products
-        .map((p, i) => `
-          <tr>
-            <td>${i + 1}</td>
-            <td>${String(p.name || '-')}</td>
-            <td>${String(p.brand || '-')}</td>
-            <td>${String(p.supplier || '-')}</td>
-            <td>${String(p.compatibility || '-')}</td>
-            <td>${String(p.category || '-')}</td>
-            <td class="right">₹${Number(p.price || 0).toFixed(2)}</td>
-            <td>${formatDate(p.orderDate)}</td>
-          </tr>
-        `)
-        .join('');
+      // Group by category to mimic app layout
+      const grouped: Record<string, any[]> = {};
+      products.forEach((p: any) => {
+        const cat = String(p.category || 'Uncategorized');
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(p);
+      });
 
-      const html = `<!doctype html><html><head><meta charset="utf-8">${styles}</head><body>${header}<table>${tableHeader}${tableRows}</table><script>window.onload = function(){ setTimeout(() => { window.print(); }, 200); };</script></body></html>`;
+      const sections = Object.entries(grouped)
+        .map(([cat, items]) => {
+          const rows = items
+            .map((p: any, i: number) => `
+              <tr class="table-row">
+                <td style="padding:10px 12px">${i + 1}</td>
+                <td style="padding:10px 12px">${String(p.name || '-')}</td>
+                <td style="padding:10px 12px">${String(p.brand || '-')}</td>
+                <td style="padding:10px 12px">${String(p.supplier || '-')}</td>
+                <td class="right" style="padding:10px 12px">₹${Number(p.price || 0).toFixed(2)}</td>
+                <td style="padding:10px 12px">${String(p.compatibility || '-')}</td>
+              </tr>
+            `)
+            .join('');
+
+          return `<div class="category"><div class="category-header">Category: ${cat}</div><table style="width:100%;border-collapse:collapse">${tableHeader}${rows}</table></div>`;
+        })
+        .join('<div style="height:18px"></div>');
+
+      const footer = `<div class="page-footer">Page 1 of 1</div>`;
+
+      const html = `<!doctype html><html><head><meta charset="utf-8">${styles}</head><body>${header}${sections}${footer}</body></html>`;
 
       win.document.open();
       win.document.write(html);
@@ -350,49 +369,8 @@ async function exportToPDF(products: any[]) {
   const opened = tryOpenPrint();
   if (opened) return;
 
-  // Fallback: generate PDF client-side
-  const loadScript = (src: string) =>
-    new Promise<void>((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) return resolve();
-      const s = document.createElement('script');
-      s.src = src;
-      s.async = true;
-      s.onload = () => resolve();
-      s.onerror = () => reject(new Error('Failed to load ' + src));
-      document.head.appendChild(s);
-    });
-
+  // Fallback: generate PDF client-side using bundled libs
   try {
-    // load html2canvas and jsPDF UMD from multiple CDNs for reliability
-    const tryLoad = async (urls: string[]) => {
-      for (const u of urls) {
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          await loadScript(u);
-          return true;
-        } catch (e) {
-          // try next
-        }
-      }
-      return false;
-    };
-
-    const ok1 = await tryLoad([
-      'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
-      'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js',
-    ]);
-    const ok2 = await tryLoad([
-      'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-      'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js',
-    ]);
-
-    if (!ok1 || !ok2) {
-      alert('Failed to load PDF libraries from CDN. Please check your network or allow loading external scripts, then try again.');
-      return;
-    }
-
     const container = document.createElement('div');
     container.style.position = 'fixed';
     container.style.left = '-9999px';
@@ -400,53 +378,57 @@ async function exportToPDF(products: any[]) {
     container.style.width = '800px';
     container.style.padding = '20px';
     container.style.background = '#fff';
-    container.innerHTML = (() => {
-      const header = `<h1 style="font-size:18px;margin-bottom:8px">Price List</h1><p style="font-size:12px;margin-bottom:12px">Generated on ${formatDate(new Date())}</p>`;
-      const tableHeader = `
-        <tr>
-          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">S.NO</th>
-          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">PRODUCT NAME</th>
-          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">BRAND</th>
-          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">SUPPLIER</th>
-          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">COMPATIBILITY</th>
-          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">CATEGORY</th>
-          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">PRICE</th>
-          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">ORDER DATE</th>
-        </tr>
-      `;
-      const rows = products
-        .map((p: any, i: number) => `
-          <tr>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb">${i + 1}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.name || '-')}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.brand || '-')}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.supplier || '-')}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.compatibility || '-')}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.category || '-')}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb">₹${Number(p.price || 0).toFixed(2)}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb">${formatDate(p.orderDate)}</td>
-          </tr>
-        `)
-        .join('');
-      return `<div>${header}<table style="width:100%;border-collapse:collapse">${tableHeader}${rows}</table></div>`;
-    })();
+
+    // Build same HTML as print path
+    const tableHeader = `
+      <tr>
+        <th style="width:48px">S. No.</th>
+        <th>Product Name</th>
+        <th>Brand</th>
+        <th>Supplier</th>
+        <th class="right">Price</th>
+        <th>Compatibility</th>
+      </tr>
+    `;
+
+    const grouped: Record<string, any[]> = {};
+    products.forEach((p: any) => {
+      const cat = String(p.category || 'Uncategorized');
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(p);
+    });
+
+    const sections = Object.entries(grouped)
+      .map(([cat, items]) => {
+        const rows = items
+          .map((p: any, i: number) => `
+            <tr>
+              <td style="padding:10px 12px">${i + 1}</td>
+              <td style="padding:10px 12px">${String(p.name || '-')}</td>
+              <td style="padding:10px 12px">${String(p.brand || '-')}</td>
+              <td style="padding:10px 12px">${String(p.supplier || '-')}</td>
+              <td style="padding:10px 12px">₹${Number(p.price || 0).toFixed(2)}</td>
+              <td style="padding:10px 12px">${String(p.compatibility || '-')}</td>
+            </tr>
+          `)
+          .join('');
+
+        return `<div style="margin-bottom:12px"><div style="background:#eef6fb;padding:8px 10px;border-radius:4px;font-weight:600;margin-bottom:8px">Category: ${cat}</div><table style="width:100%;border-collapse:collapse">${tableHeader}${rows}</table></div>`;
+      })
+      .join('');
+
+    container.innerHTML = `<div style="font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:18px;font-weight:700">OrderFlow</div><div style="font-size:12px;color:#6b7280">Exported on: ${new Date().toLocaleString()}</div></div>${sections}<div style="text-align:center;margin-top:18px;color:#9aa0a6;font-size:12px">Page 1 of 1</div></div>`;
 
     document.body.appendChild(container);
 
+    // use imported html2canvas and jsPDF
     // @ts-ignore
-    const html2canvas = (window as any).html2canvas || (window as any).html2canvas?.default;
-    const rawJsPdf = (window as any).jsPDF || (window as any).jspdf || (window as any).jspdf?.jsPDF || null;
-    const JsPdfConstructor = typeof rawJsPdf === 'function' ? rawJsPdf : (rawJsPdf && rawJsPdf.jsPDF) ? rawJsPdf.jsPDF : null;
-    if (!html2canvas || !JsPdfConstructor) {
-      alert('Failed to load PDF libraries. Please try again.');
-      container.remove();
-      return;
-    }
-
-    const canvas = await html2canvas(container as HTMLElement, { scale: 2 });
+    const canvas = await (await import('html2canvas')).default(container as HTMLElement, { scale: 2 });
     const imgData = canvas.toDataURL('image/png');
+    // @ts-ignore
+    const { jsPDF } = await import('jspdf');
+    const pdf = new jsPDF('p', 'pt', 'a4');
 
-    const pdf = new JsPdfConstructor('p', 'pt', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
