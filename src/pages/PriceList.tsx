@@ -301,18 +301,22 @@ async function exportToPDF(products: any[]) {
 
       const styles = `
         <style>
-          body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 20px; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { padding: 10px 12px; border: 0; text-align: left; }
-          th { background: #eef2f6; padding: 12px 14px; }
-          .category-header { background:#eef6fb; padding:10px 12px; border-radius:4px; margin-bottom:8px; font-weight:600; }
-          .table-row { background: #fff; }
-          .table-row:nth-child(even) { background: #f8fafc; }
-          .right { text-align: right; }
-          .page-footer { text-align:center; margin-top:18px; color:#9aa0a6; font-size:12px; }
+          :root { --muted: #f3f4f6; --muted-2: #eef6fb; --text-muted: #6b7280; --border: #e6e9ed; }
+          body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: #f7fafc; margin:0; padding:20px 12px; color:#111827 }
+          .pdf-wrapper { display:flex; justify-content:center; }
+          .pdf-container { background:#fff; width:920px; border-radius:10px; padding:18px; box-shadow: 0 2px 8px rgba(16,24,40,0.06); border:1px solid var(--border); }
           .top-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-          .title { font-size:18px; font-weight:700; }
-          .exported { font-size:12px; color:#6b7280; }
+          .title { font-size:18px; font-weight:700; letter-spacing:0.2px }
+          .exported { font-size:12px; color:var(--text-muted) }
+          .category { margin-top:14px }
+          .category-header { background:var(--muted-2); padding:10px 12px; border-radius:6px; margin-bottom:8px; font-weight:700; color:#111827; font-size:13px }
+          table { width:100%; border-collapse:separate; border-spacing:0; background:transparent }
+          thead th { text-align:left; font-size:12px; color:#374151; padding:12px 14px; background:var(--muted); border-bottom:1px solid var(--border); text-transform:uppercase; letter-spacing:0.6px }
+          tbody td { padding:12px 14px; border-bottom:1px solid var(--border); font-size:13px }
+          tbody tr:nth-child(even) td { background:#fff }
+          tbody tr:nth-child(odd) td { background:#fbfdff }
+          .right { text-align:right; }
+          .page-footer { text-align:center; margin-top:20px; color:#9aa0a6; font-size:12px }
         </style>
       `;
 
@@ -358,7 +362,7 @@ async function exportToPDF(products: any[]) {
 
       const footer = `<div class="page-footer">Page 1 of 1</div>`;
 
-      const html = `<!doctype html><html><head><meta charset="utf-8">${styles}</head><body>${header}${sections}${footer}</body></html>`;
+      const html = `<!doctype html><html><head><meta charset="utf-8">${styles}</head><body><div class="pdf-wrapper"><div class="pdf-container">${header}${sections}${footer}</div></div></body></html>`;
 
       win.document.open();
       win.document.write(html);
@@ -420,7 +424,17 @@ async function exportToPDF(products: any[]) {
       })
       .join('');
 
-    container.innerHTML = `<div style="font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:18px;font-weight:700">OrderFlow</div><div style="font-size:12px;color:#6b7280">Exported on: ${new Date().toLocaleString()}</div></div>${sections}<div style="text-align:center;margin-top:18px;color:#9aa0a6;font-size:12px">Page 1 of 1</div></div>`;
+    container.innerHTML = `
+      <div style="font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial; color:#111827">
+        <div style="max-width:920px;margin:0 auto;background:#fff;border-radius:10px;padding:18px;border:1px solid #e6e9ed;box-shadow:0 2px 8px rgba(16,24,40,0.06)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:18px;font-weight:700">OrderFlow</div>
+            <div style="font-size:12px;color:#6b7280">Exported on: ${new Date().toLocaleString()}</div>
+          </div>
+          ${sections}
+          <div style="text-align:center;margin-top:18px;color:#9aa0a6;font-size:12px">Page 1 of 1</div>
+        </div>
+      </div>`;
 
     document.body.appendChild(container);
 
