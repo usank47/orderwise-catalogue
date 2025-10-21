@@ -30,6 +30,23 @@ const OrderHistory = () => {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // global search (toggled from top nav)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const searchRef = React.useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (showSearch) {
+      setTimeout(() => searchRef.current?.focus(), 50);
+    }
+  }, [showSearch]);
+
+  useEffect(() => {
+    const onToggle = () => setShowSearch((s) => !s);
+    window.addEventListener('toggle-search', onToggle as EventListener);
+    return () => window.removeEventListener('toggle-search', onToggle as EventListener);
+  }, []);
+
   const handleDelete = (orderId: string) => {
     deleteOrder(orderId);
     setOrders(getOrders());
