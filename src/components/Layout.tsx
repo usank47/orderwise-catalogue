@@ -55,16 +55,14 @@ const Layout = ({ children }: LayoutProps) => {
                 })}
               </div>
 
-              {/* Context-sensitive search button for Price List page */}
-              {isPriceList && (
-                <button
-                  aria-label="Toggle search"
-                  onClick={handleSearchToggle}
-                  className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:bg-secondary"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-              )}
+              {/* Search button available on all pages; PriceList listens for toggle-search event */}
+              <button
+                aria-label="Toggle search"
+                onClick={handleSearchToggle}
+                className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:bg-secondary"
+              >
+                <Search className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
