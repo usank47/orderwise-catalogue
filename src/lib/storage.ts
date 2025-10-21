@@ -79,3 +79,16 @@ export const deleteOrder = (orderId: string): void => {
   const filtered = orders.filter(order => order.id !== orderId);
   localStorage.setItem(ORDERS_KEY, JSON.stringify(filtered));
 };
+
+export const updateOrder = (order: Order): void => {
+  const orders = getOrders();
+  const idx = orders.findIndex((o) => o.id === order.id);
+  if (idx >= 0) {
+    orders[idx] = order;
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  } else {
+    // fallback to append if not found
+    orders.push(order);
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  }
+};
