@@ -128,14 +128,46 @@ const OrderHistory = () => {
     toast.success('Order updated');
   };
 
+  const [sortBy, setSortBy] = useState<'date' | 'supplier-asc' | 'supplier-desc'>('date');
+
+  const displayedOrders = useMemo(() => {
+    const copy = [...orders];
+    if (sortBy === 'date') {
+      return copy.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+    if (sortBy === 'supplier-asc') {
+      return copy.sort((a, b) => (a.supplier || '').localeCompare(b.supplier || ''));
+    }
+    if (sortBy === 'supplier-desc') {
+      return copy.sort((a, b) => (b.supplier || '').localeCompare(a.supplier || ''));
+    }
+    return copy;
+  }, [orders, sortBy]);
+
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Order History</h1>
-        <p className="text-muted-foreground">View and manage your past orders</p>
+      <div className="mb-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Order History</h1>
+            <p className="text-muted-foreground">View and manage your past orders</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-muted-foreground">Sort</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="border rounded px-2 py-1 bg-background text-sm"
+            >
+              <option value="date">Date (newest)</option>
+              <option value="supplier-asc">Supplier (A → Z)</option>
+              <option value="supplier-desc">Supplier (Z → A)</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      {orders.length === 0 ? (
+      {displayedOrders.length === 0 ? (
         <Card className="p-12 text-center">
           <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold mb-2">No orders yet</h3>
