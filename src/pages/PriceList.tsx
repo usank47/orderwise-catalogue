@@ -199,6 +199,7 @@ const PriceList = () => {
                             <div className="min-w-0">
                               <p className="font-medium truncate">{product.name}</p>
                               <p className="text-sm text-muted-foreground truncate">{product.brand} · {product.supplier}</p>
+                              <p className="text-sm text-muted-foreground truncate">{product.compatibility || '-'}</p>
                             </div>
                           </div>
                         </div>
