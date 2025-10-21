@@ -110,6 +110,13 @@ export const deleteOrder = (orderId: string): void => {
   const orders = getOrders();
   const filtered = orders.filter(order => order.id !== orderId);
   localStorage.setItem(ORDERS_KEY, JSON.stringify(filtered));
+  (async () => {
+    try {
+      if (isNativeAvailable()) {
+        await nativeSaveOrders(filtered);
+      }
+    } catch (e) {}
+  })();
 };
 
 export const updateOrder = (order: Order): void => {
@@ -123,4 +130,11 @@ export const updateOrder = (order: Order): void => {
     orders.push(order);
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
   }
+  (async () => {
+    try {
+      if (isNativeAvailable()) {
+        await nativeSaveOrders(orders);
+      }
+    } catch (e) {}
+  })();
 };
