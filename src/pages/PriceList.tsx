@@ -288,59 +288,155 @@ function exportToCSV(products: any[]) {
   URL.revokeObjectURL(url);
 }
 
-function exportToPDF(products: any[]) {
-  // Open a new window and render a printable table, user can Save as PDF via print dialog
-  const win = window.open('', '_blank', 'noopener,noreferrer');
-  if (!win) {
-    alert('Unable to open print window. Please disable popup blockers and try again.');
-    return;
+async function exportToPDF(products: any[]) {
+  // Try to open print window first (native print). If blocked, fall back to client-side PDF generation using html2canvas + jsPDF.
+  const tryOpenPrint = () => {
+    try {
+      const win = window.open('', '_blank', 'noopener,noreferrer');
+      if (!win) return false;
+
+      const styles = `
+        <style>
+          body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 20px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { padding: 8px 10px; border: 1px solid #e5e7eb; text-align: left; }
+          th { background: #f3f4f6; }
+          .right { text-align: right; }
+        </style>
+      `;
+
+      const header = `<h1>Price List</h1><p>Generated on ${new Date().toLocaleString()}</p>`;
+
+      const tableHeader = `
+        <tr>
+          <th>S.NO</th>
+          <th>PRODUCT NAME</th>
+          <th>BRAND</th>
+          <th>SUPPLIER</th>
+          <th>COMPATIBILITY</th>
+          <th>CATEGORY</th>
+          <th class="right">PRICE</th>
+          <th>ORDER DATE</th>
+        </tr>
+      `;
+
+      const tableRows = products
+        .map((p, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${String(p.name || '-')}</td>
+            <td>${String(p.brand || '-')}</td>
+            <td>${String(p.supplier || '-')}</td>
+            <td>${String(p.compatibility || '-')}</td>
+            <td>${String(p.category || '-')}</td>
+            <td class="right">₹${Number(p.price || 0).toFixed(2)}</td>
+            <td>${new Date(p.orderDate).toLocaleDateString()}</td>
+          </tr>
+        `)
+        .join('');
+
+      const html = `<!doctype html><html><head><meta charset="utf-8">${styles}</head><body>${header}<table>${tableHeader}${tableRows}</table><script>window.onload = function(){ setTimeout(() => { window.print(); }, 200); };</script></body></html>`;
+
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const opened = tryOpenPrint();
+  if (opened) return;
+
+  // Fallback: generate PDF client-side
+  const loadScript = (src: string) =>
+    new Promise<void>((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Failed to load ' + src));
+      document.head.appendChild(s);
+    });
+
+  try {
+    // load html2canvas and jsPDF UMD
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = '800px';
+    container.style.padding = '20px';
+    container.style.background = '#fff';
+    container.innerHTML = (() => {
+      const header = `<h1 style="font-size:18px;margin-bottom:8px">Price List</h1><p style="font-size:12px;margin-bottom:12px">Generated on ${new Date().toLocaleString()}</p>`;
+      const tableHeader = `
+        <tr>
+          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">S.NO</th>
+          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">PRODUCT NAME</th>
+          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">BRAND</th>
+          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">SUPPLIER</th>
+          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">COMPATIBILITY</th>
+          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">CATEGORY</th>
+          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">PRICE</th>
+          <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">ORDER DATE</th>
+        </tr>
+      `;
+      const rows = products
+        .map((p: any, i: number) => `
+          <tr>
+            <td style="padding:8px 10px;border:1px solid #e5e7eb">${i + 1}</td>
+            <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.name || '-')}</td>
+            <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.brand || '-')}</td>
+            <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.supplier || '-')}</td>
+            <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.compatibility || '-')}</td>
+            <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.category || '-')}</td>
+            <td style="padding:8px 10px;border:1px solid #e5e7eb">₹${Number(p.price || 0).toFixed(2)}</td>
+            <td style="padding:8px 10px;border:1px solid #e5e7eb">${new Date(p.orderDate).toLocaleDateString()}</td>
+          </tr>
+        `)
+        .join('');
+      return `<div>${header}<table style="width:100%;border-collapse:collapse">${tableHeader}${rows}</table></div>`;
+    })();
+
+    document.body.appendChild(container);
+
+    // @ts-ignore
+    const html2canvas = (window as any).html2canvas;
+    const { jsPDF } = (window as any).jspdf || (window as any).jsPDF ? { jsPDF: (window as any).jsPDF } : (window as any).jspdf || {};
+    if (!html2canvas || !jsPDF) {
+      alert('Failed to load PDF libraries. Please try again.');
+      container.remove();
+      return;
+    }
+
+    const canvas = await html2canvas(container as HTMLElement, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+
+    const pdf = new jsPDF('p', 'pt', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+
+    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+    const imgScaledWidth = imgWidth * ratio;
+    const imgScaledHeight = imgHeight * ratio;
+
+    pdf.addImage(imgData, 'PNG', 0, 0, imgScaledWidth, imgScaledHeight);
+    pdf.save(`price-list-${new Date().toISOString().slice(0,10)}.pdf`);
+
+    container.remove();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to generate PDF. Please try again or allow popups for print.');
   }
-
-  const styles = `
-    <style>
-      body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 20px; }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { padding: 8px 10px; border: 1px solid #e5e7eb; text-align: left; }
-      th { background: #f3f4f6; }
-      .right { text-align: right; }
-    </style>
-  `;
-
-  const header = `<h1>Price List</h1><p>Generated on ${new Date().toLocaleString()}</p>`;
-
-  const tableHeader = `
-    <tr>
-      <th>S.NO</th>
-      <th>PRODUCT NAME</th>
-      <th>BRAND</th>
-      <th>SUPPLIER</th>
-      <th>COMPATIBILITY</th>
-      <th>CATEGORY</th>
-      <th class="right">PRICE</th>
-      <th>ORDER DATE</th>
-    </tr>
-  `;
-
-  const tableRows = products
-    .map((p, i) => `
-      <tr>
-        <td>${i + 1}</td>
-        <td>${String(p.name || '-')}</td>
-        <td>${String(p.brand || '-')}</td>
-        <td>${String(p.supplier || '-')}</td>
-        <td>${String(p.compatibility || '-')}</td>
-        <td>${String(p.category || '-')}</td>
-        <td class="right">₹${Number(p.price || 0).toFixed(2)}</td>
-        <td>${new Date(p.orderDate).toLocaleDateString()}</td>
-      </tr>
-    `)
-    .join('');
-
-  const html = `<!doctype html><html><head><meta charset="utf-8">${styles}</head><body>${header}<table>${tableHeader}${tableRows}</table><script>window.onload = function(){ setTimeout(() => { window.print(); }, 200); };</script></body></html>`;
-
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
 }
 
 export default PriceList;
