@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { getOrders } from '@/lib/storage';
+import { formatDate } from '@/lib/utils';
 import { Product } from '@/types/order';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
@@ -270,7 +271,7 @@ function exportToCSV(products: any[]) {
     p.compatibility || '-',
     p.category || '-',
     formatPriceForCsv(Number(p.price)),
-    new Date(p.orderDate).toLocaleDateString(),
+    formatDate(p.orderDate),
   ]);
 
   const csvContent = [headers, ...rows]
@@ -305,7 +306,7 @@ async function exportToPDF(products: any[]) {
         </style>
       `;
 
-      const header = `<h1>Price List</h1><p>Generated on ${new Date().toLocaleString()}</p>`;
+      const header = `<h1>Price List</h1><p>Generated on ${formatDate(new Date())}</p>`;
 
       const tableHeader = `
         <tr>
@@ -330,7 +331,7 @@ async function exportToPDF(products: any[]) {
             <td>${String(p.compatibility || '-')}</td>
             <td>${String(p.category || '-')}</td>
             <td class="right">₹${Number(p.price || 0).toFixed(2)}</td>
-            <td>${new Date(p.orderDate).toLocaleDateString()}</td>
+            <td>${formatDate(p.orderDate)}</td>
           </tr>
         `)
         .join('');
@@ -398,7 +399,7 @@ async function exportToPDF(products: any[]) {
     container.style.padding = '20px';
     container.style.background = '#fff';
     container.innerHTML = (() => {
-      const header = `<h1 style="font-size:18px;margin-bottom:8px">Price List</h1><p style="font-size:12px;margin-bottom:12px">Generated on ${new Date().toLocaleString()}</p>`;
+      const header = `<h1 style="font-size:18px;margin-bottom:8px">Price List</h1><p style="font-size:12px;margin-bottom:12px">Generated on ${formatDate(new Date())}</p>`;
       const tableHeader = `
         <tr>
           <th style="padding:8px 10px;border:1px solid #e5e7eb;background:#f3f4f6">S.NO</th>
@@ -421,7 +422,7 @@ async function exportToPDF(products: any[]) {
             <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.compatibility || '-')}</td>
             <td style="padding:8px 10px;border:1px solid #e5e7eb">${String(p.category || '-')}</td>
             <td style="padding:8px 10px;border:1px solid #e5e7eb">₹${Number(p.price || 0).toFixed(2)}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb">${new Date(p.orderDate).toLocaleDateString()}</td>
+            <td style="padding:8px 10px;border:1px solid #e5e7eb">${formatDate(p.orderDate)}</td>
           </tr>
         `)
         .join('');
