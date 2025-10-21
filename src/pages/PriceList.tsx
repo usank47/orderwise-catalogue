@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Share2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+// pdf generation libs (bundled)
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 type GroupBy = 'category' | 'brand' | 'supplier';
 
