@@ -174,6 +174,19 @@ const OrderHistory = () => {
       copy = copy.filter((o) => (o.supplier || '') === filterSupplier);
     }
 
+    if (searchQuery && searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      copy = copy.filter((o) => {
+        if ((o.supplier || '').toLowerCase().includes(q)) return true;
+        if ((formatDate(o.date) || '').toLowerCase().includes(q)) return true;
+        if ((o.id || '').toLowerCase().includes(q)) return true;
+        if (String(o.totalAmount || '').toLowerCase().includes(q)) return true;
+        // search inside product fields
+        if (o.products.some(p => (p.name || '').toLowerCase().includes(q) || (p.brand || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q) || (String(p.compatibility || '').toLowerCase().includes(q)))) return true;
+        return false;
+      });
+    }
+
     if (sortBy === 'date') {
       return copy.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
@@ -184,7 +197,7 @@ const OrderHistory = () => {
       return copy.sort((a, b) => (b.supplier || '').localeCompare(a.supplier || ''));
     }
     return copy;
-  }, [orders, sortBy, filterSupplier]);
+  }, [orders, sortBy, filterSupplier, searchQuery]);
 
   return (
     <div className="max-w-6xl mx-auto">
