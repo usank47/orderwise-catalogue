@@ -177,18 +177,33 @@ const OrderHistory = () => {
             <p className="text-muted-foreground">View and manage your past orders</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground">Filter</label>
-              <select
-                value={filterSupplier}
-                onChange={(e) => setFilterSupplier(e.target.value)}
-                className="border rounded px-2 py-1 bg-background text-sm"
-              >
-                <option value="all">All parties</option>
-                {supplierOptions.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+            <div className="relative" ref={filterMenuRef}>
+              <label className="sr-only">Filter</label>
+              <Button variant="outline" onClick={() => setShowFilterMenu((s) => !s)}>
+                Filter
+              </Button>
+
+              {showFilterMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg p-2 z-50">
+                  <button
+                    className={`w-full text-left px-3 py-2 rounded ${filterSupplier === 'all' ? 'bg-muted/50' : ''}`}
+                    onClick={() => { setFilterSupplier('all'); setShowFilterMenu(false); }}
+                  >
+                    All parties
+                  </button>
+                  <div className="mt-2 max-h-48 overflow-auto">
+                    {supplierOptions.map((s) => (
+                      <button
+                        key={s}
+                        className={`w-full text-left px-3 py-2 rounded ${filterSupplier === s ? 'bg-muted/50' : ''}`}
+                        onClick={() => { setFilterSupplier(s); setShowFilterMenu(false); }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
