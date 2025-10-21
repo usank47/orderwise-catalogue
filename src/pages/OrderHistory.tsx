@@ -253,6 +253,22 @@ const OrderHistory = () => {
         </div>
       </div>
 
+      <div className="px-4 py-2">
+        {showSearch && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              ref={searchRef}
+              type="text"
+              placeholder="Search orders, suppliers, products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-muted border-0 h-10"
+            />
+          </div>
+        )}
+      </div>
+
       {displayedOrders.length === 0 ? (
         <Card className="p-12 text-center">
           <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
