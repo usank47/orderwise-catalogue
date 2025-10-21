@@ -247,108 +247,110 @@ const OrderHistory = () => {
                         <DialogTitle>Order Details - #{order.id.slice(0,8)}</DialogTitle>
                       </DialogHeader>
 
-                      <div className="mt-4">
-                        {!editing && (
-                          <>
-                            <p className="text-sm text-muted-foreground">Supplier</p>
-                            <p className="font-medium mb-2">{selectedOrder?.supplier}</p>
+                      <div className="mt-4 flex flex-col">
+                        <div className="max-h-[60vh] overflow-auto pr-2 space-y-4">
+                          {!editing && (
+                            <>
+                              <p className="text-sm text-muted-foreground">Supplier</p>
+                              <p className="font-medium mb-2">{selectedOrder?.supplier}</p>
 
-                            <p className="text-sm text-muted-foreground">Date</p>
-                            <p className="font-medium mb-2">{selectedOrder ? new Date(selectedOrder.date).toLocaleString() : ''}</p>
+                              <p className="text-sm text-muted-foreground">Date</p>
+                              <p className="font-medium mb-2">{selectedOrder ? new Date(selectedOrder.date).toLocaleString() : ''}</p>
 
-                            <div className="mt-4">
-                              <h4 className="font-semibold mb-2">Products</h4>
-                              <div className="space-y-2">
-                                {selectedOrder?.products.map((p) => (
-                                  <div key={p.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                                    <div>
-                                      <p className="font-medium">{p.name}</p>
-                                      <p className="text-sm text-muted-foreground">{p.category} • {p.brand} {p.compatibility ? `• ${p.compatibility}` : ''}</p>
+                              <div className="mt-4">
+                                <h4 className="font-semibold mb-2">Products</h4>
+                                <div className="space-y-2">
+                                  {selectedOrder?.products.map((p) => (
+                                    <div key={p.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                      <div>
+                                        <p className="font-medium">{p.name}</p>
+                                        <p className="text-sm text-muted-foreground">{p.category} • {p.brand} {p.compatibility ? `• ${p.compatibility}` : ''}</p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="font-medium">₹{p.price.toFixed(2)} × {p.quantity}</p>
+                                        <p className="text-sm text-primary font-semibold">₹{(p.price * p.quantity).toFixed(2)}</p>
+                                      </div>
                                     </div>
-                                    <div className="text-right">
-                                      <p className="font-medium">₹{p.price.toFixed(2)} × {p.quantity}</p>
-                                      <p className="text-sm text-primary font-semibold">₹{(p.price * p.quantity).toFixed(2)}</p>
-                                    </div>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
                               </div>
-                            </div>
 
-                            <div className="mt-4 text-right">
-                              <p className="text-sm text-muted-foreground">Total</p>
-                              <p className="font-bold text-xl">₹{selectedOrder?.totalAmount.toFixed(2)}</p>
-                            </div>
-                          </>
-                        )}
-
-                        {editing && editOrder && (
-                          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); saveEditedOrder(); }}>
-                            <div>
-                              <Label htmlFor="edit-supplier">Supplier</Label>
-                              <ComboBox
-                                id="edit-supplier"
-                                value={editOrder.supplier}
-                                onChange={(v) => setEditOrder({ ...editOrder, supplier: v })}
-                                options={suggestionOptions.suppliers}
-                                placeholder="Supplier"
-                              />
-                            </div>
-
-                            <div>
-                              <Label htmlFor="edit-date">Date</Label>
-                              <Input id="edit-date" type="datetime-local" value={new Date(editOrder.date).toISOString().slice(0,16)} onChange={(e) => setEditOrder({ ...editOrder, date: new Date(e.target.value).toISOString() })} className="mt-1.5" />
-                            </div>
-
-                            <div>
-                              <h4 className="font-semibold mb-2">Products</h4>
-                              <div className="space-y-2">
-                                {editOrder.products.map((p, idx) => (
-                                  <ProductForm
-                                    key={p.id}
-                                    product={p}
-                                    index={idx}
-                                    onChange={handleEditProductChange}
-                                    onRemove={removeEditProduct}
-                                    showRemove={editOrder.products.length > 1}
-                                    productNameOptions={suggestionOptions.names}
-                                    categoryOptions={suggestionOptions.categories}
-                                    brandOptions={suggestionOptions.brands}
-                                    compatibilityOptions={suggestionOptions.compatibilities}
-                                  />
-                                ))}
-                                <Button type="button" variant="outline" onClick={addEditProduct} className="w-full">
-                                  Add Product
-                                </Button>
+                              <div className="mt-4 text-right">
+                                <p className="text-sm text-muted-foreground">Total</p>
+                                <p className="font-bold text-xl">₹{selectedOrder?.totalAmount.toFixed(2)}</p>
                               </div>
-                            </div>
+                            </>
+                          )}
 
-                            <div className="mt-4 text-right">
-                              <p className="text-sm text-muted-foreground">Total</p>
-                              <p className="font-bold text-xl">₹{editOrder.products.reduce((s, p) => s + Number(p.price || 0) * Number(p.quantity || 0), 0).toFixed(2)}</p>
+                          {editing && editOrder && (
+                            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); saveEditedOrder(); }}>
+                              <div>
+                                <Label htmlFor="edit-supplier">Supplier</Label>
+                                <ComboBox
+                                  id="edit-supplier"
+                                  value={editOrder.supplier}
+                                  onChange={(v) => setEditOrder({ ...editOrder, supplier: v })}
+                                  options={suggestionOptions.suppliers}
+                                  placeholder="Supplier"
+                                />
+                              </div>
+
+                              <div>
+                                <Label htmlFor="edit-date">Date</Label>
+                                <Input id="edit-date" type="datetime-local" value={new Date(editOrder.date).toISOString().slice(0,16)} onChange={(e) => setEditOrder({ ...editOrder, date: new Date(e.target.value).toISOString() })} className="mt-1.5" />
+                              </div>
+
+                              <div>
+                                <h4 className="font-semibold mb-2">Products</h4>
+                                <div className="space-y-2">
+                                  {editOrder.products.map((p, idx) => (
+                                    <ProductForm
+                                      key={p.id}
+                                      product={p}
+                                      index={idx}
+                                      onChange={handleEditProductChange}
+                                      onRemove={removeEditProduct}
+                                      showRemove={editOrder.products.length > 1}
+                                      productNameOptions={suggestionOptions.names}
+                                      categoryOptions={suggestionOptions.categories}
+                                      brandOptions={suggestionOptions.brands}
+                                      compatibilityOptions={suggestionOptions.compatibilities}
+                                    />
+                                  ))}
+                                  <Button type="button" variant="outline" onClick={addEditProduct} className="w-full">
+                                    Add Product
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <div className="mt-4 text-right">
+                                <p className="text-sm text-muted-foreground">Total</p>
+                                <p className="font-bold text-xl">₹{editOrder.products.reduce((s, p) => s + Number(p.price || 0) * Number(p.quantity || 0), 0).toFixed(2)}</p>
+                              </div>
+                            </form>
+                          )}
+                        </div>
+
+                        <DialogFooter>
+                          {!editing && (
+                            <div className="flex gap-2 ml-auto">
+                              <Button variant="ghost" onClick={() => { setEditing(true); setEditOrder(selectedOrder ? { ...selectedOrder } as Order : null); }}>
+                                <Edit3 className="w-4 h-4 mr-2" /> Edit
+                              </Button>
+                              <DialogClose asChild>
+                                <Button variant="outline"><X className="w-4 h-4 mr-2"/>Close</Button>
+                              </DialogClose>
                             </div>
-                          </form>
-                        )}
+                          )}
+
+                          {editing && (
+                            <div className="flex gap-2 ml-auto">
+                              <Button variant="outline" onClick={() => { setEditing(false); setEditOrder(selectedOrder ? { ...selectedOrder } as Order : null); }}>Cancel</Button>
+                              <Button onClick={saveEditedOrder} className="bg-gradient-primary">Save</Button>
+                            </div>
+                          )}
+                        </DialogFooter>
                       </div>
-
-                      <DialogFooter>
-                        {!editing && (
-                          <div className="flex gap-2 ml-auto">
-                            <Button variant="ghost" onClick={() => { setEditing(true); setEditOrder(selectedOrder ? { ...selectedOrder } as Order : null); }}>
-                              <Edit3 className="w-4 h-4 mr-2" /> Edit
-                            </Button>
-                            <DialogClose asChild>
-                              <Button variant="outline"><X className="w-4 h-4 mr-2"/>Close</Button>
-                            </DialogClose>
-                          </div>
-                        )}
-
-                        {editing && (
-                          <div className="flex gap-2 ml-auto">
-                            <Button variant="outline" onClick={() => { setEditing(false); setEditOrder(selectedOrder ? { ...selectedOrder } as Order : null); }}>Cancel</Button>
-                            <Button onClick={saveEditedOrder} className="bg-gradient-primary">Save</Button>
-                          </div>
-                        )}
-                      </DialogFooter>
                     </DialogContent>
                   </Dialog>
                 </div>
