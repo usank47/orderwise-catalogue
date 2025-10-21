@@ -19,8 +19,16 @@ const PriceList = () => {
   const navigate = useNavigate();
   const [groupBy, setGroupBy] = useState<GroupBy>('category');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const orders = getOrders();
+
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    if (showSearch) {
+      setTimeout(() => searchRef.current?.focus(), 50);
+    }
+  }, [showSearch]);
 
   const allProducts = useMemo(() => {
     const products: ProductWithSupplier[] = [];
@@ -76,22 +84,36 @@ const PriceList = () => {
           >
             <ArrowLeft className="w-6 h-6" />
           </Button>
+
           <h1 className="text-xl font-bold">Price List</h1>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSearch((s) => !s)}
+            className="absolute right-4"
+            aria-label="Toggle search"
+          >
+            <Search className="w-5 h-5" />
+          </Button>
         </div>
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-muted border-0 h-12"
-          />
-        </div>
+        {/* Search - hidden by default, shown when search button toggled */}
+        {showSearch && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              ref={searchRef}
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-muted border-0 h-12"
+            />
+          </div>
+        )}
 
         {/* Filter Tabs */}
         <div className="flex gap-3">
