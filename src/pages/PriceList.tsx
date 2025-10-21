@@ -324,8 +324,8 @@ async function exportToPDF(products: any[]) {
           <th>Product Name</th>
           <th>Brand</th>
           <th>Supplier</th>
-          <th class="right">Price</th>
           <th>Compatibility</th>
+          <th class="right">Price</th>
         </tr>
       `;
 
