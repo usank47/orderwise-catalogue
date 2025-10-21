@@ -362,9 +362,33 @@ async function exportToPDF(products: any[]) {
     });
 
   try {
-    // load html2canvas and jsPDF UMD
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    // load html2canvas and jsPDF UMD from multiple CDNs for reliability
+    const tryLoad = async (urls: string[]) => {
+      for (const u of urls) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await loadScript(u);
+          return true;
+        } catch (e) {
+          // try next
+        }
+      }
+      return false;
+    };
+
+    const ok1 = await tryLoad([
+      'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    ]);
+    const ok2 = await tryLoad([
+      'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+    ]);
+
+    if (!ok1 || !ok2) {
+      alert('Failed to load PDF libraries from CDN. Please check your network or allow loading external scripts, then try again.');
+      return;
+    }
 
     const container = document.createElement('div');
     container.style.position = 'fixed';
