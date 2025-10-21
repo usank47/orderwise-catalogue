@@ -192,18 +192,19 @@ const PriceList = () => {
                 <div className="md:hidden p-2 space-y-2">
                   {products.map((product, index) => (
                     <div key={product.id} className="bg-muted/20 rounded-lg p-3">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 text-sm text-muted-foreground w-8">{index + 1}</div>
+
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3">
-                            <div className="text-sm text-muted-foreground w-8">{index + 1}</div>
-                            <div className="min-w-0">
-                              <p className="font-medium truncate">{product.name}</p>
-                              <p className="text-sm text-muted-foreground truncate">{product.brand} · {product.supplier}</p>
-                              <p className="text-sm text-muted-foreground truncate">{product.compatibility || '-'}</p>
-                            </div>
-                          </div>
+                          <p className="font-medium truncate">{product.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{product.brand} · {product.supplier}</p>
                         </div>
-                        <div className="text-right ml-3">
+
+                        <div className="flex-shrink-0 px-3">
+                          <p className="text-sm text-muted-foreground truncate max-w-[90px]">{product.compatibility || '-'}</p>
+                        </div>
+
+                        <div className="flex-shrink-0 ml-3 text-right">
                           <p className="font-medium">₹{product.price.toFixed(2)}</p>
                         </div>
                       </div>
