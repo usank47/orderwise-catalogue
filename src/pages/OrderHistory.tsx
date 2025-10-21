@@ -35,13 +35,13 @@ const OrderHistory = () => {
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = React.useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (showSearch) {
       setTimeout(() => searchRef.current?.focus(), 50);
     }
   }, [showSearch]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const onToggle = () => setShowSearch((s) => !s);
     window.addEventListener('toggle-search', onToggle as EventListener);
     return () => window.removeEventListener('toggle-search', onToggle as EventListener);
