@@ -103,7 +103,22 @@ export const saveOrder = (order: Order): void => {
 
 export const getOrders = (): Order[] => {
   const ordersJson = localStorage.getItem(ORDERS_KEY);
-  return ordersJson ? JSON.parse(ordersJson) : [];
+  const local = ordersJson ? JSON.parse(ordersJson) : [];
+  // if native is available, attempt to read native data asynchronously and reconcile
+  (async () => {
+    try {
+      if (isNativeAvailable()) {
+        const native = await nativeGetOrders();
+        if (native && Array.isArray(native) && native.length > 0) {
+          // prefer native, and sync it back to localStorage
+          localStorage.setItem(ORDERS_KEY, JSON.stringify(native));
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  })();
+  return local;
 };
 
 export const deleteOrder = (orderId: string): void => {
