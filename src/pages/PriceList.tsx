@@ -159,15 +159,6 @@ const PriceList = () => {
                 {/* Desktop table - visible on md and up */}
                 <div className="hidden md:block overflow-x-auto">
                   <Table>
-                    {/* Fixed column widths so headers align across all category tables */}
-                    <colgroup>
-                      <col style={{ width: '64px' }} />
-                      <col style={{ width: '1fr', minWidth: '380px' }} />
-                      <col style={{ width: '160px' }} />
-                      <col style={{ width: '160px' }} />
-                      <col style={{ width: '140px' }} />
-                      <col style={{ width: '120px' }} />
-                    </colgroup>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
                         <TableHead className="w-16 text-xs">S.NO</TableHead>
