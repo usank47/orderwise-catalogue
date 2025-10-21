@@ -129,9 +129,21 @@ const OrderHistory = () => {
   };
 
   const [sortBy, setSortBy] = useState<'date' | 'supplier-asc' | 'supplier-desc'>('date');
+  const [filterSupplier, setFilterSupplier] = useState<string>('all');
+
+  const supplierOptions = useMemo(() => {
+    const s = new Set<string>();
+    orders.forEach((o) => { if (o.supplier) s.add(o.supplier); });
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [orders]);
 
   const displayedOrders = useMemo(() => {
-    const copy = [...orders];
+    let copy = [...orders];
+
+    if (filterSupplier !== 'all') {
+      copy = copy.filter((o) => (o.supplier || '') === filterSupplier);
+    }
+
     if (sortBy === 'date') {
       return copy.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
@@ -142,7 +154,7 @@ const OrderHistory = () => {
       return copy.sort((a, b) => (b.supplier || '').localeCompare(a.supplier || ''));
     }
     return copy;
-  }, [orders, sortBy]);
+  }, [orders, sortBy, filterSupplier]);
 
   return (
     <div className="max-w-6xl mx-auto">
