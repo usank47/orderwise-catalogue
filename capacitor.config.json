@@ -1,0 +1,6 @@
+{
+  "appId": "com.orderflow.app",
+  "appName": "OrderFlow",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
