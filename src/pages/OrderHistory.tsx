@@ -130,6 +130,18 @@ const OrderHistory = () => {
 
   const [sortBy, setSortBy] = useState<'date' | 'supplier-asc' | 'supplier-desc'>('date');
   const [filterSupplier, setFilterSupplier] = useState<string>('all');
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const filterMenuRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (filterMenuRef.current && !filterMenuRef.current.contains(e.target as Node)) {
+        setShowFilterMenu(false);
+      }
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, []);
 
   const supplierOptions = useMemo(() => {
     const s = new Set<string>();
