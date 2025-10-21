@@ -164,17 +164,33 @@ const OrderHistory = () => {
             <h1 className="text-3xl font-bold mb-2">Order History</h1>
             <p className="text-muted-foreground">View and manage your past orders</p>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-muted-foreground">Sort</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="border rounded px-2 py-1 bg-background text-sm"
-            >
-              <option value="date">Date (newest)</option>
-              <option value="supplier-asc">Supplier (A → Z)</option>
-              <option value="supplier-desc">Supplier (Z → A)</option>
-            </select>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-muted-foreground">Filter</label>
+              <select
+                value={filterSupplier}
+                onChange={(e) => setFilterSupplier(e.target.value)}
+                className="border rounded px-2 py-1 bg-background text-sm"
+              >
+                <option value="all">All parties</option>
+                {supplierOptions.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-muted-foreground">Sort</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="border rounded px-2 py-1 bg-background text-sm"
+              >
+                <option value="date">Date (newest)</option>
+                <option value="supplier-asc">Supplier (A → Z)</option>
+                <option value="supplier-desc">Supplier (Z → A)</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
