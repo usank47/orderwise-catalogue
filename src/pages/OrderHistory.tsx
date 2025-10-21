@@ -39,14 +39,93 @@ const OrderHistory = () => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
-  const openDetails = (order: any) => {
+  const openDetails = (order: Order) => {
     setSelectedOrder(order);
+    setEditOrder({ ...order, products: order.products.map(p => ({ ...p })) });
+    setEditing(false);
     setDialogOpen(true);
   };
 
   const closeDetails = () => {
     setDialogOpen(false);
     setSelectedOrder(null);
+    setEditOrder(null);
+    setEditing(false);
+  };
+
+  const [editing, setEditing] = useState(false);
+  const [editOrder, setEditOrder] = useState<Order | null>(null);
+
+  // suggestion options (from existing stored orders)
+  const suggestionOptions = React.useMemo(() => {
+    const orders = getOrders();
+    const suppliers = new Set<string>();
+    const names = new Set<string>();
+    const categories = new Set<string>();
+    const brands = new Set<string>();
+    const comps = new Set<string>();
+    orders.forEach(o => {
+      if (o.supplier) suppliers.add(o.supplier);
+      o.products.forEach(p => {
+        if (p.name) names.add(p.name);
+        if (p.category) categories.add(p.category);
+        if (p.brand) brands.add(p.brand);
+        if (p.compatibility) comps.add(p.compatibility);
+      });
+    });
+    return {
+      suppliers: Array.from(suppliers),
+      names: Array.from(names),
+      categories: Array.from(categories),
+      brands: Array.from(brands),
+      compatibilities: Array.from(comps),
+    };
+  }, [orders]);
+
+  const handleEditProductChange = (index: number, field: keyof Product, value: string | number) => {
+    if (!editOrder) return;
+    const updated = { ...editOrder };
+    updated.products = updated.products.map((p, i) => (i === index ? { ...p, [field]: value } : p));
+    setEditOrder(updated);
+  };
+
+  const addEditProduct = () => {
+    if (!editOrder) return;
+    const updated = { ...editOrder };
+    updated.products = [
+      ...updated.products,
+      { id: crypto.randomUUID(), name: '', quantity: 1, price: 0, category: '', brand: '', compatibility: '' },
+    ];
+    setEditOrder(updated);
+  };
+
+  const removeEditProduct = (index: number) => {
+    if (!editOrder) return;
+    const updated = { ...editOrder };
+    updated.products = updated.products.filter((_, i) => i !== index);
+    setEditOrder(updated);
+  };
+
+  const saveEditedOrder = () => {
+    if (!editOrder) return;
+    // validate
+    if (!editOrder.supplier || editOrder.supplier.trim() === '') {
+      toast.error('Supplier is required');
+      return;
+    }
+    const invalid = editOrder.products.some(p => !p.name || !p.category || !p.brand || Number(p.quantity) <= 0 || Number(p.price) <= 0);
+    if (invalid) {
+      toast.error('Please fill all required product fields');
+      return;
+    }
+    const total = editOrder.products.reduce((s, p) => s + Number(p.price || 0) * Number(p.quantity || 0), 0);
+    const toSave = { ...editOrder, totalAmount: total } as Order;
+    updateOrder(toSave);
+    setOrders(getOrders());
+    setSelectedOrder(toSave);
+    setEditOrder(toSave);
+    setEditing(false);
+    toast.success('Order updated');
   };
 
   return (
