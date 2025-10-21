@@ -76,26 +76,7 @@ const PriceList = () => {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b">
         <div className="flex items-center justify-center py-4 px-4 relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/')}
-            className="absolute left-4"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </Button>
-
           <h1 className="text-xl font-bold">Price List</h1>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowSearch((s) => !s)}
-            className="absolute right-4"
-            aria-label="Toggle search"
-          >
-            <Search className="w-5 h-5" />
-          </Button>
         </div>
       </div>
 
