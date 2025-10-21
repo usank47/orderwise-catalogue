@@ -14,3 +14,12 @@ export function formatDate(input: string | Date | number | undefined | null) {
   const yyyy = d.getFullYear();
   return `${dd}/${mm}/${yyyy}`;
 }
+
+export function formatDateTime(input: string | Date | number | undefined | null) {
+  if (!input) return '';
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return '';
+  const datePart = formatDate(d);
+  const timePart = d.toLocaleTimeString();
+  return `${datePart}, ${timePart}`;
+}
