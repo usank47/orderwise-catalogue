@@ -413,8 +413,14 @@ async function exportToPDF(products: any[]) {
       grouped[cat].push(p);
     });
 
-    const sections = Object.entries(grouped)
+    const tableRowsAll = Object.entries(grouped)
       .map(([cat, items]) => {
+        const categoryRow = `
+          <tr>
+            <td colspan="6" style="padding:10px 12px;background:#eef6fb;font-weight:600;border-bottom:1px solid #e6e9ed">Category: ${cat}</td>
+          </tr>
+        `;
+
         const rows = items
           .map((p: any, i: number) => `
             <tr>
@@ -428,9 +434,11 @@ async function exportToPDF(products: any[]) {
           `)
           .join('');
 
-        return `<div style="margin-bottom:12px"><div style="background:#eef6fb;padding:8px 10px;border-radius:4px;font-weight:600;margin-bottom:8px">Category: ${cat}</div><table style="width:100%;border-collapse:collapse">${tableHeader}${rows}</table></div>`;
+        return categoryRow + rows;
       })
       .join('');
+
+    const sections = `<table style="width:100%;border-collapse:collapse">${tableHeader}${tableRowsAll}</table>`;
 
     container.innerHTML = `
       <div style="font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial; color:#111827">
