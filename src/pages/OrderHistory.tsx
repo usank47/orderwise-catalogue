@@ -22,6 +22,7 @@ import ProductForm from '@/components/ProductForm';
 import ComboBox from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatDate } from '@/lib/utils';
 
 const OrderHistory = () => {
   const [orders, setOrders] = useState(getOrders());
@@ -239,12 +240,12 @@ const OrderHistory = () => {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-lg">{new Date(order.date).toLocaleDateString()} • {order.supplier}</h3>
+                            <h3 className="font-semibold text-lg">{formatDate(order.date)} • {order.supplier}</h3>
                           </div>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1.5">
                               <Calendar className="w-4 h-4" />
-                              <span>{new Date(order.date).toLocaleDateString()}</span>
+                              <span>{formatDate(order.date)}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <Package className="w-4 h-4" />
@@ -339,7 +340,7 @@ const OrderHistory = () => {
                               <p className="font-medium mb-2">{selectedOrder?.supplier}</p>
 
                               <p className="text-sm text-muted-foreground">Date</p>
-                              <p className="font-medium mb-2">{selectedOrder ? new Date(selectedOrder.date).toLocaleString() : ''}</p>
+                              <p className="font-medium mb-2">{selectedOrder ? formatDate(selectedOrder.date) : ''}</p>
 
                               <div className="mt-4">
                                 <h4 className="font-semibold mb-2">Products</h4>
