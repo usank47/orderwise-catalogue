@@ -341,24 +341,32 @@ async function exportToPDF(products: any[]) {
         grouped[cat].push(p);
       });
 
-      const sections = Object.entries(grouped)
+      const tableRowsAll = Object.entries(grouped)
         .map(([cat, items]) => {
+          const categoryRow = `
+            <tr>
+              <td colspan="6" style="padding:10px 14px;background:var(--muted-2);font-weight:700;border-bottom:1px solid var(--border)">Category: ${cat}</td>
+            </tr>
+          `;
+
           const rows = items
             .map((p: any, i: number) => `
               <tr class="table-row">
-                <td style="padding:10px 12px">${i + 1}</td>
-                <td style="padding:10px 12px"><strong>${String(p.name || '-')}</strong></td>
-                <td style="padding:10px 12px">${String(p.brand || '-')}</td>
-                <td style="padding:10px 12px">${String(p.supplier || '-')}</td>
-                <td style="padding:10px 12px">${String(p.compatibility || '-')}</td>
-                <td class="right" style="padding:10px 12px">₹${Number(p.price || 0).toFixed(2)}</td>
+                <td style="padding:10px 14px">${i + 1}</td>
+                <td style="padding:10px 14px"><strong>${String(p.name || '-')}</strong></td>
+                <td style="padding:10px 14px">${String(p.brand || '-')}</td>
+                <td style="padding:10px 14px">${String(p.supplier || '-')}</td>
+                <td style="padding:10px 14px">${String(p.compatibility || '-')}</td>
+                <td class="right" style="padding:10px 14px">₹${Number(p.price || 0).toFixed(2)}</td>
               </tr>
             `)
             .join('');
 
-          return `<div class="category"><div class="category-header">Category: ${cat}</div><table style="width:100%;border-collapse:collapse">${tableHeader}${rows}</table></div>`;
+          return categoryRow + rows;
         })
-        .join('<div style="height:18px"></div>');
+        .join('<tr style="height:12px"><td colspan="6"></td></tr>');
+
+      const sections = `<table style="width:100%;border-collapse:collapse">${tableHeader}${tableRowsAll}</table>`;
 
       const footer = `<div class="page-footer">Page 1 of 1</div>`;
 
