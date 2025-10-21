@@ -432,9 +432,10 @@ async function exportToPDF(products: any[]) {
     document.body.appendChild(container);
 
     // @ts-ignore
-    const html2canvas = (window as any).html2canvas;
-    const { jsPDF } = (window as any).jspdf || (window as any).jsPDF ? { jsPDF: (window as any).jsPDF } : (window as any).jspdf || {};
-    if (!html2canvas || !jsPDF) {
+    const html2canvas = (window as any).html2canvas || (window as any).html2canvas?.default;
+    const rawJsPdf = (window as any).jsPDF || (window as any).jspdf || (window as any).jspdf?.jsPDF || null;
+    const JsPdfConstructor = typeof rawJsPdf === 'function' ? rawJsPdf : (rawJsPdf && rawJsPdf.jsPDF) ? rawJsPdf.jsPDF : null;
+    if (!html2canvas || !JsPdfConstructor) {
       alert('Failed to load PDF libraries. Please try again.');
       container.remove();
       return;
@@ -443,7 +444,7 @@ async function exportToPDF(products: any[]) {
     const canvas = await html2canvas(container as HTMLElement, { scale: 2 });
     const imgData = canvas.toDataURL('image/png');
 
-    const pdf = new jsPDF('p', 'pt', 'a4');
+    const pdf = new JsPdfConstructor('p', 'pt', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
