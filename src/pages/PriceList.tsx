@@ -410,8 +410,8 @@ async function exportToPDF(products: any[]) {
               <td style="padding:10px 12px">${String(p.name || '-')}</td>
               <td style="padding:10px 12px">${String(p.brand || '-')}</td>
               <td style="padding:10px 12px">${String(p.supplier || '-')}</td>
-              <td style="padding:10px 12px">₹${Number(p.price || 0).toFixed(2)}</td>
               <td style="padding:10px 12px">${String(p.compatibility || '-')}</td>
+              <td style="padding:10px 12px">₹${Number(p.price || 0).toFixed(2)}</td>
             </tr>
           `)
           .join('');
