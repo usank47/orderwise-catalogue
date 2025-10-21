@@ -167,7 +167,7 @@ const OrderHistory = () => {
     return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [orders]);
 
-  const displayedOrders = useMemo(() => {
+  const displayedOrders = React.useMemo(() => {
     let copy = [...orders];
 
     if (filterSupplier !== 'all') {
