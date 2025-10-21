@@ -265,7 +265,7 @@ function formatPriceForCsv(price: number) {
 }
 
 function exportToCSV(products: any[]) {
-  const headers = ['S.NO', 'PRODUCT NAME', 'BRAND', 'SUPPLIER', 'COMPATIBILITY', 'CATEGORY', 'PRICE', 'ORDER DATE'];
+  const headers = ['S.NO', 'PRODUCT NAME', 'BRAND', 'SUPPLIER', 'COMPATIBILITY', 'CATEGORY', 'ORDER DATE', 'PRICE'];
   const rows = products.map((p, i) => [
     i + 1,
     p.name,
