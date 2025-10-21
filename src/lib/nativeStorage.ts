@@ -11,8 +11,10 @@ export async function initNativeStorage() {
     // dynamic import so web builds without plugin still work
     // Use @vite-ignore so Vite doesn't try to pre-bundle this optional native plugin
     // The import will fail gracefully at runtime in the browser when plugin isn't installed.
+    // Build the spec dynamically to avoid Vite import-analysis completely
+    const pkg = '@capacitor' + '/storage';
     // @ts-ignore
-    const mod = await import(/* @vite-ignore */ '@capacitor/storage');
+    const mod = await import(/* @vite-ignore */ pkg);
     Storage = mod.Storage;
     // quick availability check
     if (Storage && typeof Storage.get === 'function') {
