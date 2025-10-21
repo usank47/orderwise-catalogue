@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Calendar, Package, Trash2, ChevronDown, ChevronUp, X, Edit3 } from 'lucide-react';
+import { Calendar, Package, Trash2, ChevronDown, ChevronUp, X, Edit3, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { Order, Product } from '@/types/order';
 import ProductForm from '@/components/ProductForm';
