@@ -175,9 +175,7 @@ const OrderHistory = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          {orders
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-            .map((order) => {
+          {displayedOrders.map((order) => {
               const isExpanded = expandedOrder === order.id;
               return (
                 <div key={order.id}>
