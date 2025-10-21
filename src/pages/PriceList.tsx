@@ -30,6 +30,12 @@ const PriceList = () => {
     }
   }, [showSearch]);
 
+  useEffect(() => {
+    const onToggle = () => setShowSearch((s) => !s);
+    window.addEventListener('toggle-search', onToggle as EventListener);
+    return () => window.removeEventListener('toggle-search', onToggle as EventListener);
+  }, []);
+
   const allProducts = useMemo(() => {
     const products: ProductWithSupplier[] = [];
     orders.forEach((order) => {
@@ -81,7 +87,7 @@ const PriceList = () => {
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Search - hidden by default, shown when search button toggled */}
+        {/* Search - controlled by top nav toggle (context-sensitive) */}
         {showSearch && (
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
