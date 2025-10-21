@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { getOrders, deleteOrder } from '@/lib/storage';
+import React, { useState } from 'react';
+import { getOrders, deleteOrder, updateOrder } from '@/lib/storage';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +15,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Calendar, Package, Trash2, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Calendar, Package, Trash2, ChevronDown, ChevronUp, X, Edit3 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Order, Product } from '@/types/order';
+import ProductForm from '@/components/ProductForm';
+import ComboBox from '@/components/ui/combobox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const OrderHistory = () => {
   const [orders, setOrders] = useState(getOrders());
