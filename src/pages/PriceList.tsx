@@ -397,12 +397,12 @@ async function exportToPDF(products: any[]) {
     // Build same HTML as print path
     const tableHeader = `
       <tr>
-        <th style="width:48px">S. No.</th>
-        <th>Product Name</th>
-        <th>Brand</th>
-        <th>Supplier</th>
-        <th>Compatibility</th>
-        <th class="right">Price</th>
+        <th style="width:48px;text-align:left;font-size:12px;color:#374151;padding:12px 14px;background:#f3f4f6;border-bottom:1px solid #e6e9ed;text-transform:uppercase;letter-spacing:0.6px">S. No.</th>
+        <th style="text-align:left;font-size:12px;color:#374151;padding:12px 14px;background:#f3f4f6;border-bottom:1px solid #e6e9ed;text-transform:uppercase;letter-spacing:0.6px">Product Name</th>
+        <th style="text-align:left;font-size:12px;color:#374151;padding:12px 14px;background:#f3f4f6;border-bottom:1px solid #e6e9ed;text-transform:uppercase;letter-spacing:0.6px">Brand</th>
+        <th style="text-align:left;font-size:12px;color:#374151;padding:12px 14px;background:#f3f4f6;border-bottom:1px solid #e6e9ed;text-transform:uppercase;letter-spacing:0.6px">Supplier</th>
+        <th style="text-align:left;font-size:12px;color:#374151;padding:12px 14px;background:#f3f4f6;border-bottom:1px solid #e6e9ed;text-transform:uppercase;letter-spacing:0.6px">Compatibility</th>
+        <th style="text-align:right;font-size:12px;color:#374151;padding:12px 14px;background:#f3f4f6;border-bottom:1px solid #e6e9ed;text-transform:uppercase;letter-spacing:0.6px">Price</th>
       </tr>
     `;
 
@@ -417,26 +417,26 @@ async function exportToPDF(products: any[]) {
       .map(([cat, items]) => {
         const categoryRow = `
           <tr>
-            <td colspan="6" style="padding:10px 12px;background:#eef6fb;font-weight:600;border-bottom:1px solid #e6e9ed">Category: ${cat}</td>
+            <td colspan="6" style="padding:10px 14px;background:#eef6fb;font-weight:700;border-bottom:1px solid #e6e9ed">Category: ${cat}</td>
           </tr>
         `;
 
         const rows = items
           .map((p: any, i: number) => `
             <tr>
-              <td style="padding:10px 12px">${i + 1}</td>
-              <td style="padding:10px 12px"><strong>${String(p.name || '-')}</strong></td>
-              <td style="padding:10px 12px">${String(p.brand || '-')}</td>
-              <td style="padding:10px 12px">${String(p.supplier || '-')}</td>
-              <td style="padding:10px 12px">${String(p.compatibility || '-')}</td>
-              <td style="padding:10px 12px">₹${Number(p.price || 0).toFixed(2)}</td>
+              <td style="padding:10px 14px">${i + 1}</td>
+              <td style="padding:10px 14px"><strong>${String(p.name || '-')}</strong></td>
+              <td style="padding:10px 14px">${String(p.brand || '-')}</td>
+              <td style="padding:10px 14px">${String(p.supplier || '-')}</td>
+              <td style="padding:10px 14px">${String(p.compatibility || '-')}</td>
+              <td style="padding:10px 14px;text-align:right">₹${Number(p.price || 0).toFixed(2)}</td>
             </tr>
           `)
           .join('');
 
         return categoryRow + rows;
       })
-      .join('');
+      .join('<tr style="height:12px"><td colspan="6"></td></tr>');
 
     const sections = `<table style="width:100%;border-collapse:collapse">${tableHeader}${tableRowsAll}</table>`;
 
