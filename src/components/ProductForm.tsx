@@ -1,10 +1,11 @@
 import { Product } from '@/types/order';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
+import ComboBox from '@/components/ui/combobox';
 
 interface ProductFormProps {
   product: Product;
@@ -12,12 +13,23 @@ interface ProductFormProps {
   onChange: (index: number, field: keyof Product, value: string | number) => void;
   onRemove: (index: number) => void;
   showRemove: boolean;
+  productNameOptions?: string[];
+  categoryOptions?: string[];
+  brandOptions?: string[];
+  compatibilityOptions?: string[];
 }
 
-const categories = ['Electronics', 'Accessories', 'Software', 'Hardware', 'Peripherals'];
-const brands = ['Logitech', 'Microsoft', 'Apple', 'Dell', 'HP', 'Lenovo', 'Samsung'];
-
-const ProductForm = ({ product, index, onChange, onRemove, showRemove }: ProductFormProps) => {
+const ProductForm = ({
+  product,
+  index,
+  onChange,
+  onRemove,
+  showRemove,
+  productNameOptions = [],
+  categoryOptions = [],
+  brandOptions = [],
+  compatibilityOptions = [],
+}: ProductFormProps) => {
   return (
     <Card className="p-6 space-y-4 hover:shadow-medium transition-shadow duration-200">
       <div className="flex items-center justify-between">
@@ -37,12 +49,12 @@ const ProductForm = ({ product, index, onChange, onRemove, showRemove }: Product
       <div className="space-y-4">
         <div>
           <Label htmlFor={`product-name-${index}`}>Product Name</Label>
-          <Input
+          <ComboBox
             id={`product-name-${index}`}
-            value={product.name}
-            onChange={(e) => onChange(index, 'name', e.target.value)}
-            placeholder="e.g., Wireless Mouse"
-            className="mt-1.5"
+            value={product.name || ''}
+            onChange={(val: string) => onChange(index, 'name', val)}
+            options={productNameOptions}
+            placeholder="Select or type product name"
           />
         </div>
 
@@ -59,7 +71,7 @@ const ProductForm = ({ product, index, onChange, onRemove, showRemove }: Product
             />
           </div>
           <div>
-            <Label htmlFor={`price-${index}`}>Price ($)</Label>
+            <Label htmlFor={`price-${index}`}>Price (₹)</Label>
             <Input
               id={`price-${index}`}
               type="number"
@@ -74,44 +86,34 @@ const ProductForm = ({ product, index, onChange, onRemove, showRemove }: Product
 
         <div>
           <Label htmlFor={`category-${index}`}>Category</Label>
-          <Select value={product.category} onValueChange={(value) => onChange(index, 'category', value)}>
-            <SelectTrigger className="mt-1.5">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover">
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ComboBox
+            id={`category-${index}`}
+            value={product.category || ''}
+            onChange={(val: string) => onChange(index, 'category', val)}
+            options={categoryOptions}
+            placeholder="Select or type category"
+          />
         </div>
 
         <div>
           <Label htmlFor={`brand-${index}`}>Brand</Label>
-          <Select value={product.brand} onValueChange={(value) => onChange(index, 'brand', value)}>
-            <SelectTrigger className="mt-1.5">
-              <SelectValue placeholder="Select brand" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover">
-              {brands.map((brand) => (
-                <SelectItem key={brand} value={brand}>
-                  {brand}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ComboBox
+            id={`brand-${index}`}
+            value={product.brand || ''}
+            onChange={(val: string) => onChange(index, 'brand', val)}
+            options={brandOptions}
+            placeholder="Select or type brand"
+          />
         </div>
 
         <div>
           <Label htmlFor={`compatibility-${index}`}>Compatibility (Optional)</Label>
-          <Input
+          <ComboBox
             id={`compatibility-${index}`}
             value={product.compatibility || ''}
-            onChange={(e) => onChange(index, 'compatibility', e.target.value)}
-            placeholder="e.g., Windows, macOS"
-            className="mt-1.5"
+            onChange={(val: string) => onChange(index, 'compatibility', val)}
+            options={compatibilityOptions}
+            placeholder="Select or type compatibility"
           />
         </div>
       </div>
