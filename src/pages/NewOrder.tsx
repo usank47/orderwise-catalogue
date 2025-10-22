@@ -1,16 +1,14 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product, Order } from '@/types/order';
-import { saveOrder } from '@/lib/storage';
+import { getOrders, saveOrder } from '@/lib/storage';
 import { Button } from '@/components/ui/button';
+import ComboBox from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProductForm from '@/components/ProductForm';
 import { Plus, Send } from 'lucide-react';
 import { toast } from 'sonner';
-
-const suppliers = ['Tech Supplies Inc.', 'Global Electronics', 'Prime Distributors', 'Elite Tech Solutions'];
 
 const NewOrder = () => {
   const navigate = useNavigate();
@@ -28,10 +26,52 @@ const NewOrder = () => {
     },
   ]);
 
+  // suggestion options derived from saved orders (price list DB)
+  const [supplierOptions, setSupplierOptions] = useState<string[]>([]);
+  const [productNameOptions, setProductNameOptions] = useState<string[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [brandOptions, setBrandOptions] = useState<string[]>([]);
+  const [compatibilityOptions, setCompatibilityOptions] = useState<string[]>([]);
+
+  React.useEffect(() => {
+    const orders = getOrders();
+    const suppliersSet = new Set<string>();
+    const productSet = new Set<string>();
+    const categorySet = new Set<string>();
+    const brandSet = new Set<string>();
+    const compSet = new Set<string>();
+
+    orders.forEach((o) => {
+      if (o.supplier) suppliersSet.add(o.supplier);
+      o.products?.forEach((p) => {
+        if (p.name) productSet.add(p.name);
+        if (p.category) categorySet.add(p.category);
+        if (p.brand) brandSet.add(p.brand);
+        if (p.compatibility) compSet.add(p.compatibility);
+      });
+    });
+
+    setSupplierOptions(Array.from(suppliersSet));
+    setProductNameOptions(Array.from(productSet));
+    setCategoryOptions(Array.from(categorySet));
+    setBrandOptions(Array.from(brandSet));
+    setCompatibilityOptions(Array.from(compSet));
+  }, []);
+
   const handleProductChange = (index: number, field: keyof Product, value: string | number) => {
     const updated = [...products];
     updated[index] = { ...updated[index], [field]: value };
     setProducts(updated);
+
+    // if user typed a new suggestion, add it locally so it appears for other rows immediately
+    if (typeof value === 'string') {
+      const v = value.trim();
+      if (!v) return;
+      if (field === 'name' && !productNameOptions.includes(v)) setProductNameOptions((s) => [...s, v]);
+      if (field === 'category' && !categoryOptions.includes(v)) setCategoryOptions((s) => [...s, v]);
+      if (field === 'brand' && !brandOptions.includes(v)) setBrandOptions((s) => [...s, v]);
+      if (field === 'compatibility' && !compatibilityOptions.includes(v)) setCompatibilityOptions((s) => [...s, v]);
+    }
   };
 
   const addProduct = () => {
@@ -55,16 +95,20 @@ const NewOrder = () => {
     }
   };
 
+  const totalAmount = React.useMemo(() => {
+    return products.reduce((sum, p) => sum + Number(p.price || 0) * Number(p.quantity || 0), 0);
+  }, [products]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!supplier) {
+    if (!supplier || supplier.trim() === '') {
       toast.error('Please select a supplier');
       return;
     }
 
     const invalidProducts = products.filter(
-      (p) => !p.name || !p.category || !p.brand || p.quantity <= 0 || p.price <= 0
+      (p) => !p.name || !p.category || !p.brand || Number(p.quantity) <= 0 || Number(p.price) <= 0
     );
 
     if (invalidProducts.length > 0) {
@@ -72,19 +116,51 @@ const NewOrder = () => {
       return;
     }
 
-    const totalAmount = products.reduce((sum, p) => sum + p.price * p.quantity, 0);
-
     const order: Order = {
       id: crypto.randomUUID(),
       date,
       supplier,
-      products,
+      products: products.map(p => ({ ...p, quantity: Number(p.quantity), price: Number(p.price) })),
       totalAmount,
       createdAt: new Date().toISOString(),
     };
 
     saveOrder(order);
-    toast.success('Order placed successfully!');
+
+    // After saving, update suggestion lists immediately
+    const orders = getOrders();
+    const suppliersSet = new Set(supplierOptions);
+    const productSet = new Set(productNameOptions);
+    const categorySet = new Set(categoryOptions);
+    const brandSet = new Set(brandOptions);
+    const compSet = new Set(compatibilityOptions);
+
+    suppliersSet.add(order.supplier);
+    order.products.forEach((p) => {
+      if (p.name) productSet.add(p.name);
+      if (p.category) categorySet.add(p.category);
+      if (p.brand) brandSet.add(p.brand);
+      if (p.compatibility) compSet.add(p.compatibility || '');
+    });
+
+    // also include any values from existing orders
+    orders.forEach((o) => {
+      if (o.supplier) suppliersSet.add(o.supplier);
+      o.products.forEach((p) => {
+        if (p.name) productSet.add(p.name);
+        if (p.category) categorySet.add(p.category);
+        if (p.brand) brandSet.add(p.brand);
+        if (p.compatibility) compSet.add(p.compatibility || '');
+      });
+    });
+
+    setSupplierOptions(Array.from(suppliersSet).filter(Boolean));
+    setProductNameOptions(Array.from(productSet).filter(Boolean));
+    setCategoryOptions(Array.from(categorySet).filter(Boolean));
+    setBrandOptions(Array.from(brandSet).filter(Boolean));
+    setCompatibilityOptions(Array.from(compSet).filter(Boolean));
+
+    toast.success('Order uploaded successfully!');
     navigate('/order-history');
   };
 
@@ -111,18 +187,16 @@ const NewOrder = () => {
 
           <div>
             <Label htmlFor="supplier">Supplier</Label>
-            <Select value={supplier} onValueChange={setSupplier} required>
-              <SelectTrigger className="mt-1.5">
-                <SelectValue placeholder="Select supplier" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {suppliers.map((sup) => (
-                  <SelectItem key={sup} value={sup}>
-                    {sup}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ComboBox
+              id="supplier"
+              value={supplier}
+              onChange={(val) => {
+                setSupplier(val);
+                if (val && !supplierOptions.includes(val)) setSupplierOptions((s) => [...s, val]);
+              }}
+              options={supplierOptions}
+              placeholder="Select or type supplier"
+            />
           </div>
         </div>
 
@@ -136,6 +210,10 @@ const NewOrder = () => {
               onChange={handleProductChange}
               onRemove={removeProduct}
               showRemove={products.length > 1}
+              productNameOptions={productNameOptions}
+              categoryOptions={categoryOptions}
+              brandOptions={brandOptions}
+              compatibilityOptions={compatibilityOptions}
             />
           ))}
 
@@ -150,9 +228,20 @@ const NewOrder = () => {
           </Button>
         </div>
 
-        <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity">
+        <div className="mt-4 p-4 bg-muted/20 rounded-lg">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="font-bold text-lg">₹{totalAmount.toFixed(2)}</p>
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
+          disabled={products.some(p => !p.name || !p.category || !p.brand || Number(p.quantity) <= 0 || Number(p.price) <= 0) || !supplier}
+        >
           <Send className="w-4 h-4 mr-2" />
-          Place Order
+          Upload Order
         </Button>
       </form>
     </div>
