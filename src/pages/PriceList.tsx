@@ -301,8 +301,8 @@ async function exportToPDF(products: any[]) {
 
       const styles = `
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #fff; margin:0; padding:40px; color:#1a1a1a; }
-          .pdf-container { max-width:1100px; margin:0 auto; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #fff; margin:0; padding:30px 40px; color:#1a1a1a; }
+          .pdf-container { width:100%; }
           .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:40px; padding-bottom:12px; border-bottom:2px solid #1a1a1a; }
           .title { font-size:24px; font-weight:700; color:#1a1a1a; letter-spacing:-0.02em; }
           .exported { font-size:11px; color:#666; }
@@ -316,6 +316,12 @@ async function exportToPDF(products: any[]) {
           tbody td:last-child { text-align:right; font-weight:500; }
           tbody tr:hover { background:#fafafa; }
           .page-footer { text-align:center; margin-top:40px; color:#9ca3af; font-size:11px; padding-top:20px; border-top:1px solid #f3f4f6; }
+          .col-sno { width:60px; }
+          .col-product { width:35%; }
+          .col-brand { width:15%; }
+          .col-supplier { width:18%; }
+          .col-compat { width:17%; }
+          .col-price { width:15%; }
         </style>
       `;
 
@@ -323,12 +329,12 @@ async function exportToPDF(products: any[]) {
 
       const tableHeader = `
         <tr>
-          <th style="width:60px">S.NO</th>
-          <th>PRODUCT NAME</th>
-          <th>BRAND</th>
-          <th>SUPPLIER</th>
-          <th>COMPATIBILITY</th>
-          <th>PRICE</th>
+          <th class="col-sno">S.NO</th>
+          <th class="col-product">PRODUCT NAME</th>
+          <th class="col-brand">BRAND</th>
+          <th class="col-supplier">SUPPLIER</th>
+          <th class="col-compat">COMPATIBILITY</th>
+          <th class="col-price">PRICE</th>
         </tr>
       `;
 
@@ -389,19 +395,19 @@ async function exportToPDF(products: any[]) {
     container.style.position = 'fixed';
     container.style.left = '-9999px';
     container.style.top = '0';
-    container.style.width = '800px';
-    container.style.padding = '20px';
+    container.style.width = '1400px';
+    container.style.padding = '30px 40px';
     container.style.background = '#fff';
 
     // Build same HTML as print path
     const tableHeader = `
       <tr>
         <th style="width:60px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">S.NO</th>
-        <th style="text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">PRODUCT NAME</th>
-        <th style="text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">BRAND</th>
-        <th style="text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">SUPPLIER</th>
-        <th style="text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">COMPATIBILITY</th>
-        <th style="text-align:right;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">PRICE</th>
+        <th style="width:35%;text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">PRODUCT NAME</th>
+        <th style="width:15%;text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">BRAND</th>
+        <th style="width:18%;text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">SUPPLIER</th>
+        <th style="width:17%;text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">COMPATIBILITY</th>
+        <th style="width:15%;text-align:right;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">PRICE</th>
       </tr>
     `;
 
@@ -440,8 +446,8 @@ async function exportToPDF(products: any[]) {
       .join('');
 
     container.innerHTML = `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;color:#1a1a1a;background:#fff;padding:40px">
-        <div style="max-width:1100px;margin:0 auto">
+      <div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;color:#1a1a1a;background:#fff">
+        <div style="width:100%">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;padding-bottom:12px;border-bottom:2px solid #1a1a1a">
             <div style="font-size:24px;font-weight:700;color:#1a1a1a;letter-spacing:-0.02em">Price List</div>
             <div style="font-size:11px;color:#666">Exported on: ${formatDateTime(new Date())}</div>
