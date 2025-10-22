@@ -33,4 +33,18 @@ window.addEventListener('unhandledrejection', (ev: PromiseRejectionEvent) => {
   }
 });
 
-createRoot(document.getElementById("root")!).render(<App />);
+(async function boot(){
+  try{
+    // Attempt to perform an initial supabase pull if configured
+    const envHasSupabase = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+    if (envHasSupabase) {
+      // dynamic import to avoid loading supabase in dev if not configured
+      const sync = await import('./lib/sync');
+      try { await sync.pullFromSupabase(); } catch(e) { console.error('initial pull failed', e); }
+    }
+  }catch(e){
+    // ignore
+  }
+
+  createRoot(document.getElementById("root")!).render(<App />);
+})();
