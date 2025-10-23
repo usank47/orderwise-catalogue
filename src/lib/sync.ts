@@ -15,11 +15,11 @@ export async function pullFromSupabase() {
 
   try {
     // fetch all orders (for simplicity). In production use incremental fetch by updated_at
-    const { data: orders, error: ordersErr } = await supabase.from('orders').select('*');
+    const { data: orders, error: ordersErr } = await (supabase as any).from('orders').select('*');
     if (ordersErr) throw ordersErr;
 
     for (const o of orders || []) {
-      const { data: prods, error: prodErr } = await supabase
+      const { data: prods, error: prodErr } = await (supabase as any)
         .from('order_products')
         .select('*')
         .eq('order_id', o.id);
@@ -62,7 +62,7 @@ export async function pushToSupabase(localOrders?: any[]) {
   try {
     const toPush = localOrders ?? getOrders();
     for (const order of toPush) {
-      const { error: orderErr } = await supabase.from('orders').upsert({
+      const { error: orderErr } = await (supabase as any).from('orders').upsert({
         id: order.id,
         date: order.date,
         supplier: order.supplier,
@@ -73,7 +73,7 @@ export async function pushToSupabase(localOrders?: any[]) {
       if (orderErr) console.error('push order error', orderErr);
 
       for (const p of order.products || []) {
-        const { error: prodErr } = await supabase.from('order_products').upsert({
+        const { error: prodErr } = await (supabase as any).from('order_products').upsert({
           id: p.id,
           order_id: order.id,
           name: p.name,
