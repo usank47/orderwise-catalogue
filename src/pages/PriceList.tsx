@@ -304,18 +304,18 @@ async function exportToPDF(products: any[]) {
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #fff; margin:0; padding:30px 40px; color:#1a1a1a; }
           .pdf-container { width:100%; }
           .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:40px; padding-bottom:12px; border-bottom:2px solid #1a1a1a; }
-          .title { font-size:24px; font-weight:700; color:#1a1a1a; letter-spacing:-0.02em; }
-          .exported { font-size:11px; color:#666; }
+          .title { font-size:32px; font-weight:700; color:#1a1a1a; letter-spacing:-0.02em; }
+          .exported { font-size:13px; color:#666; }
           .category-section { margin-bottom:48px; page-break-inside:avoid; }
-          .category-header { font-size:20px; font-weight:700; color:#1a1a1a; margin-bottom:20px; text-transform:uppercase; letter-spacing:0.05em; }
+          .category-header { font-size:24px; font-weight:700; color:#1a1a1a; margin-bottom:20px; text-transform:uppercase; letter-spacing:0.05em; }
           table { width:100%; border-collapse:collapse; margin-top:8px; }
-          thead th { text-align:left; font-size:11px; font-weight:600; color:#6b7280; padding:12px 16px; border-bottom:1px solid #e5e7eb; text-transform:uppercase; letter-spacing:0.08em; }
+          thead th { text-align:left; font-size:13px; font-weight:600; color:#6b7280; padding:12px 16px; border-bottom:1px solid #e5e7eb; text-transform:uppercase; letter-spacing:0.08em; }
           thead th:last-child { text-align:right; }
-          tbody td { padding:16px; border-bottom:1px solid #f3f4f6; font-size:14px; color:#1a1a1a; }
-          tbody td:first-child { color:#6b7280; font-size:13px; }
+          tbody td { padding:16px; border-bottom:1px solid #f3f4f6; font-size:16px; color:#1a1a1a; }
+          tbody td:first-child { color:#6b7280; font-size:15px; }
           tbody td:last-child { text-align:right; font-weight:500; }
           tbody tr:hover { background:#fafafa; }
-          .page-footer { text-align:center; margin-top:40px; color:#9ca3af; font-size:11px; padding-top:20px; border-top:1px solid #f3f4f6; }
+          .page-footer { text-align:center; margin-top:40px; color:#9ca3af; font-size:12px; padding-top:20px; border-top:1px solid #f3f4f6; }
           .col-sno { width:60px; }
           .col-product { width:35%; }
           .col-brand { width:15%; }
@@ -402,12 +402,12 @@ async function exportToPDF(products: any[]) {
     // Build same HTML as print path
     const tableHeader = `
       <tr>
-        <th style="width:60px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">S.NO</th>
-        <th style="width:35%;text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">PRODUCT NAME</th>
-        <th style="width:15%;text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">BRAND</th>
-        <th style="width:18%;text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">SUPPLIER</th>
-        <th style="width:17%;text-align:left;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">COMPATIBILITY</th>
-        <th style="width:15%;text-align:right;font-size:11px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">PRICE</th>
+        <th style="width:60px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">S.NO</th>
+        <th style="width:35%;text-align:left;font-size:13px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">PRODUCT NAME</th>
+        <th style="width:15%;text-align:left;font-size:13px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">BRAND</th>
+        <th style="width:18%;text-align:left;font-size:13px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">SUPPLIER</th>
+        <th style="width:17%;text-align:left;font-size:13px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">COMPATIBILITY</th>
+        <th style="width:15%;text-align:right;font-size:13px;font-weight:600;color:#6b7280;padding:12px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.08em">PRICE</th>
       </tr>
     `;
 
@@ -423,19 +423,19 @@ async function exportToPDF(products: any[]) {
         const rows = items
           .map((p: any, i: number) => `
             <tr>
-              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:13px;color:#6b7280">${i + 1}</td>
-              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:14px"><strong>${String(p.name || '-')}</strong></td>
-              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:14px">${String(p.brand || '-')}</td>
-              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:14px">${String(p.supplier || '-')}</td>
-              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:14px">${String(p.compatibility || '-')}</td>
-              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:14px;text-align:right;font-weight:500">₹${Number(p.price || 0).toFixed(2)}</td>
+              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:15px;color:#6b7280">${i + 1}</td>
+              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:16px"><strong>${String(p.name || '-')}</strong></td>
+              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:16px">${String(p.brand || '-')}</td>
+              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:16px">${String(p.supplier || '-')}</td>
+              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:16px">${String(p.compatibility || '-')}</td>
+              <td style="padding:16px;border-bottom:1px solid #f3f4f6;font-size:16px;text-align:right;font-weight:500">₹${Number(p.price || 0).toFixed(2)}</td>
             </tr>
           `)
           .join('');
 
         return `
           <div style="margin-bottom:48px">
-            <div style="font-size:20px;font-weight:700;color:#1a1a1a;margin-bottom:20px;text-transform:uppercase;letter-spacing:0.05em">${cat}</div>
+            <div style="font-size:24px;font-weight:700;color:#1a1a1a;margin-bottom:20px;text-transform:uppercase;letter-spacing:0.05em">${cat}</div>
             <table style="width:100%;border-collapse:collapse">
               <thead>${tableHeader}</thead>
               <tbody>${rows}</tbody>
@@ -449,11 +449,11 @@ async function exportToPDF(products: any[]) {
       <div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;color:#1a1a1a;background:#fff">
         <div style="width:100%">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;padding-bottom:12px;border-bottom:2px solid #1a1a1a">
-            <div style="font-size:24px;font-weight:700;color:#1a1a1a;letter-spacing:-0.02em">Price List</div>
-            <div style="font-size:11px;color:#666">Exported on: ${formatDateTime(new Date())}</div>
+            <div style="font-size:32px;font-weight:700;color:#1a1a1a;letter-spacing:-0.02em">Price List</div>
+            <div style="font-size:13px;color:#666">Exported on: ${formatDateTime(new Date())}</div>
           </div>
           ${categorySections}
-          <div style="text-align:center;margin-top:40px;color:#9ca3af;font-size:11px;padding-top:20px;border-top:1px solid #f3f4f6">Page 1 of 1</div>
+          <div style="text-align:center;margin-top:40px;color:#9ca3af;font-size:12px;padding-top:20px;border-top:1px solid #f3f4f6">Page 1 of 1</div>
         </div>
       </div>`;
 
