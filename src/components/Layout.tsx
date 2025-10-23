@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ShoppingCart, List, History, Search, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import InstallPWA from './InstallPWA';
 
 interface LayoutProps {
   children: ReactNode;
@@ -72,6 +73,9 @@ const Layout = ({ children }: LayoutProps) => {
                   );
                 })}
               </div>
+
+              {/* Install PWA button */}
+              <InstallPWA />
 
               {/* Sync button */}
               <button

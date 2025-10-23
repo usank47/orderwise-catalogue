@@ -14,7 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      order_products: {
+        Row: {
+          brand: string
+          category: string
+          compatibility: string | null
+          id: string
+          name: string
+          order_id: string
+          price: number
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          category: string
+          compatibility?: string | null
+          id?: string
+          name: string
+          order_id: string
+          price?: number
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          category?: string
+          compatibility?: string | null
+          id?: string
+          name?: string
+          order_id?: string
+          price?: number
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_products_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          supplier: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          supplier: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          supplier?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
