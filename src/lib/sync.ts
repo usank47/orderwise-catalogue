@@ -1,11 +1,17 @@
 // Minimal sync helpers to push/pull orders and products to Supabase.
 // These are intentionally defensive — they no-op if Supabase isn't configured.
 
-import supabase, { isSupabaseEnabled } from './supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { getOrders, updateOrder } from './storage';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+function isSupabaseEnabled() {
+  return Boolean(SUPABASE_URL && supabase);
+}
+
 export async function pullFromSupabase() {
-  if (!isSupabaseEnabled() || !supabase) return;
+  if (!isSupabaseEnabled()) return;
 
   try {
     // fetch all orders (for simplicity). In production use incremental fetch by updated_at
@@ -52,7 +58,7 @@ export async function pullFromSupabase() {
 }
 
 export async function pushToSupabase(localOrders?: any[]) {
-  if (!isSupabaseEnabled() || !supabase) return;
+  if (!isSupabaseEnabled()) return;
   try {
     const toPush = localOrders ?? getOrders();
     for (const order of toPush) {

@@ -36,7 +36,7 @@ window.addEventListener('unhandledrejection', (ev: PromiseRejectionEvent) => {
 (async function boot(){
   try{
     // Attempt to perform an initial supabase pull if configured
-    const envHasSupabase = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+    const envHasSupabase = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
     if (envHasSupabase) {
       // dynamic import to avoid loading supabase in dev if not configured
       const sync = await import('./lib/sync');
