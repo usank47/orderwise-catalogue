@@ -7,8 +7,9 @@ import ComboBox from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ProductForm from '@/components/ProductForm';
-import { Plus, Send } from 'lucide-react';
+import { Plus, Send, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 const NewOrder = () => {
   const navigate = useNavigate();
@@ -98,6 +99,82 @@ const NewOrder = () => {
   const totalAmount = React.useMemo(() => {
     return products.reduce((sum, p) => sum + Number(p.price || 0) * Number(p.quantity || 0), 0);
   }, [products]);
+
+  const downloadSampleExcel = () => {
+    const sampleData = [
+      {
+        'Product Name': 'Sample Product 1',
+        'Quantity': 10,
+        'Price': 100,
+        'Category': 'Electronics',
+        'Brand': 'Sample Brand',
+        'Compatibility': 'Universal'
+      },
+      {
+        'Product Name': 'Sample Product 2',
+        'Quantity': 5,
+        'Price': 250,
+        'Category': 'Accessories',
+        'Brand': 'Another Brand',
+        'Compatibility': 'Model XYZ'
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+    XLSX.writeFile(workbook, 'order_template.xlsx');
+    toast.success('Sample template downloaded!');
+  };
+
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet) as any[];
+
+        if (jsonData.length === 0) {
+          toast.error('Excel file is empty');
+          return;
+        }
+
+        const parsedProducts: Product[] = jsonData.map((row) => ({
+          id: crypto.randomUUID(),
+          name: row['Product Name'] || '',
+          quantity: Number(row['Quantity']) || 1,
+          price: Number(row['Price']) || 0,
+          category: row['Category'] || '',
+          brand: row['Brand'] || '',
+          compatibility: row['Compatibility'] || '',
+        }));
+
+        const invalidCount = parsedProducts.filter(
+          (p) => !p.name || !p.category || !p.brand || p.quantity <= 0 || p.price <= 0
+        ).length;
+
+        if (invalidCount > 0) {
+          toast.error(`${invalidCount} product(s) have missing or invalid data. Please check the file.`);
+          return;
+        }
+
+        setProducts(parsedProducts);
+        toast.success(`${parsedProducts.length} products loaded from Excel!`);
+        
+        // Reset file input
+        e.target.value = '';
+      } catch (error) {
+        console.error('Excel parsing error:', error);
+        toast.error('Failed to parse Excel file. Please check the format.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -243,6 +320,43 @@ const NewOrder = () => {
           <Send className="w-4 h-4 mr-2" />
           Upload Order
         </Button>
+
+        <div className="mt-8 pt-8 border-t">
+          <h3 className="text-lg font-semibold mb-4">Or Upload from Excel</h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={downloadSampleExcel}
+              className="w-full"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download Sample Template
+            </Button>
+            
+            <div className="relative">
+              <Input
+                id="excel-upload"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleExcelUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById('excel-upload')?.click()}
+                className="w-full"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Excel File
+              </Button>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mt-3">
+            Download the sample template, fill in your products, and upload it to quickly add multiple products at once.
+          </p>
+        </div>
       </form>
     </div>
   );
