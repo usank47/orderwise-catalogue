@@ -85,7 +85,7 @@ export const saveOrder = (order: Order): void => {
   const orders = getOrders();
   orders.push(order);
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-  // also attempt to write to native storage asynchronously
+  // also attempt to write to native storage and sync to Supabase asynchronously
   (async () => {
     try {
       if (isNativeAvailable()) {
@@ -95,8 +95,11 @@ export const saveOrder = (order: Order): void => {
           await nativeSaveOrders(native);
         }
       }
+      // push to Supabase
+      const { pushToSupabase } = await import('./sync');
+      await pushToSupabase([order]);
     } catch (e) {
-      // ignore
+      console.error('sync error:', e);
     }
   })();
 };
@@ -130,7 +133,12 @@ export const deleteOrder = (orderId: string): void => {
       if (isNativeAvailable()) {
         await nativeSaveOrders(filtered);
       }
-    } catch (e) {}
+      // sync to Supabase by pushing all orders
+      const { pushToSupabase } = await import('./sync');
+      await pushToSupabase(filtered);
+    } catch (e) {
+      console.error('sync error:', e);
+    }
   })();
 };
 
@@ -150,6 +158,11 @@ export const updateOrder = (order: Order): void => {
       if (isNativeAvailable()) {
         await nativeSaveOrders(orders);
       }
-    } catch (e) {}
+      // sync to Supabase
+      const { pushToSupabase } = await import('./sync');
+      await pushToSupabase([order]);
+    } catch (e) {
+      console.error('sync error:', e);
+    }
   })();
 };
