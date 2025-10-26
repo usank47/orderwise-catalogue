@@ -49,20 +49,39 @@ const isValidUUID = (id: string): boolean => {
   return uuidRegex.test(id);
 };
 
+// Normalize text to title case
+const toTitleCase = (text: string): string => {
+  if (!text) return '';
+  return text.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+};
+
 export const getOrders = (): Order[] => {
   const ordersJson = localStorage.getItem(ORDERS_KEY);
   let local = ordersJson ? JSON.parse(ordersJson) : [];
   
-  // Filter out any orders with invalid UUIDs (demo data)
+  // Filter out any orders with invalid UUIDs (demo data) and normalize text fields
   local = local.filter((order: Order) => {
     const validOrderId = isValidUUID(order.id);
     const validProductIds = order.products.every((p: any) => isValidUUID(p.id));
     return validOrderId && validProductIds;
-  });
+  }).map((order: Order) => ({
+    ...order,
+    supplier: toTitleCase(order.supplier),
+    products: order.products.map((p: any) => ({
+      ...p,
+      category: toTitleCase(p.category),
+      brand: toTitleCase(p.brand),
+      name: p.name?.trim() || '',
+      compatibility: p.compatibility?.trim() || '',
+    })),
+  }));
   
-  // Save the cleaned data back
-  if (ordersJson && local.length !== JSON.parse(ordersJson).length) {
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(local));
+  // Save the cleaned and normalized data back
+  if (ordersJson) {
+    const currentData = JSON.parse(ordersJson);
+    if (JSON.stringify(currentData) !== JSON.stringify(local)) {
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(local));
+    }
   }
   
   // if native is available, attempt to read native data asynchronously and reconcile
