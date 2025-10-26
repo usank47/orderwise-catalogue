@@ -14,12 +14,12 @@ const Layout = ({ children }: LayoutProps) => {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const navItems = [
-    { path: '/', label: 'New Order', icon: ShoppingCart },
-    { path: '/price-list', label: 'Price List', icon: List },
+    { path: '/', label: 'Price List', icon: List },
+    { path: '/new-order', label: 'New Order', icon: ShoppingCart },
     { path: '/order-history', label: 'Order History', icon: History },
   ];
 
-  const isPriceList = location.pathname === '/price-list';
+  const isPriceList = location.pathname === '/';
 
   const handleSearchToggle = () => {
     // dispatch a global event that PriceList listens to
