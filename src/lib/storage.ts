@@ -43,9 +43,28 @@ export const saveOrder = (order: Order): void => {
   })();
 };
 
+// UUID validation regex
+const isValidUUID = (id: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
+
 export const getOrders = (): Order[] => {
   const ordersJson = localStorage.getItem(ORDERS_KEY);
-  const local = ordersJson ? JSON.parse(ordersJson) : [];
+  let local = ordersJson ? JSON.parse(ordersJson) : [];
+  
+  // Filter out any orders with invalid UUIDs (demo data)
+  local = local.filter((order: Order) => {
+    const validOrderId = isValidUUID(order.id);
+    const validProductIds = order.products.every((p: any) => isValidUUID(p.id));
+    return validOrderId && validProductIds;
+  });
+  
+  // Save the cleaned data back
+  if (ordersJson && local.length !== JSON.parse(ordersJson).length) {
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(local));
+  }
+  
   // if native is available, attempt to read native data asynchronously and reconcile
   (async () => {
     try {
