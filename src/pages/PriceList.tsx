@@ -43,10 +43,12 @@ const PriceList = () => {
   const allProducts = useMemo(() => {
     const products: ProductWithSupplier[] = [];
     orders.forEach((order) => {
+      // Normalize supplier name to title case for consistent grouping
+      const normalizedSupplier = order.supplier.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
       order.products.forEach((product) => {
         products.push({
           ...product,
-          supplier: order.supplier,
+          supplier: normalizedSupplier,
           orderDate: order.date,
         });
       });
