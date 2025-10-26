@@ -197,14 +197,24 @@ const NewOrder = () => {
       return;
     }
 
-    // Normalize supplier name to title case
+    // Normalize all text fields to title case
     const normalizedSupplier = supplier.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    
+    const normalizedProducts = products.map(p => ({
+      ...p,
+      quantity: Number(p.quantity),
+      price: Number(p.price),
+      category: p.category.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
+      brand: p.brand.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
+      name: p.name.trim(),
+      compatibility: p.compatibility?.trim() || '',
+    }));
     
     const order: Order = {
       id: crypto.randomUUID(),
       date,
       supplier: normalizedSupplier,
-      products: products.map(p => ({ ...p, quantity: Number(p.quantity), price: Number(p.price) })),
+      products: normalizedProducts,
       totalAmount,
       createdAt: new Date().toISOString(),
     };
