@@ -43,7 +43,11 @@ const NewOrder = () => {
     const compSet = new Set<string>();
 
     orders.forEach((o) => {
-      if (o.supplier) suppliersSet.add(o.supplier);
+      // Normalize supplier to title case for display
+      if (o.supplier) {
+        const normalized = o.supplier.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+        suppliersSet.add(normalized);
+      }
       o.products?.forEach((p) => {
         if (p.name) productSet.add(p.name);
         if (p.category) categorySet.add(p.category);
@@ -193,10 +197,13 @@ const NewOrder = () => {
       return;
     }
 
+    // Normalize supplier name to title case
+    const normalizedSupplier = supplier.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    
     const order: Order = {
       id: crypto.randomUUID(),
       date,
-      supplier,
+      supplier: normalizedSupplier,
       products: products.map(p => ({ ...p, quantity: Number(p.quantity), price: Number(p.price) })),
       totalAmount,
       createdAt: new Date().toISOString(),
@@ -212,7 +219,7 @@ const NewOrder = () => {
     const brandSet = new Set(brandOptions);
     const compSet = new Set(compatibilityOptions);
 
-    suppliersSet.add(order.supplier);
+    suppliersSet.add(normalizedSupplier);
     order.products.forEach((p) => {
       if (p.name) productSet.add(p.name);
       if (p.category) categorySet.add(p.category);
@@ -222,7 +229,10 @@ const NewOrder = () => {
 
     // also include any values from existing orders
     orders.forEach((o) => {
-      if (o.supplier) suppliersSet.add(o.supplier);
+      if (o.supplier) {
+        const norm = o.supplier.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+        suppliersSet.add(norm);
+      }
       o.products.forEach((p) => {
         if (p.name) productSet.add(p.name);
         if (p.category) categorySet.add(p.category);
