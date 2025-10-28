@@ -1,4 +1,4 @@
-const CACHE_NAME = 'orderflow-v1';
+const CACHE_NAME = 'orderflow-v2';
 const urlsToCache = [
   '/',
   '/index.html',
