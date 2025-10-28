@@ -1,5 +1,5 @@
 import { Order } from '@/types/order';
-import { supabase } from '@/integrations/supabase/client';
+import { indexedDBService } from './indexedDB';
 
 // UUID validation regex
 const isValidUUID = (id: string): boolean => {
@@ -15,34 +15,20 @@ const toTitleCase = (text: string): string => {
 
 export const saveOrder = async (order: Order): Promise<void> => {
   try {
-    // Save order to Supabase
-    const { error: orderErr } = await supabase.from('orders').insert({
-      id: order.id,
-      date: order.date,
-      supplier: order.supplier,
-      total_amount: order.totalAmount,
-      created_at: order.createdAt || new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    // Normalize data before saving
+    const normalizedOrder = {
+      ...order,
+      supplier: toTitleCase(order.supplier),
+      products: order.products.map(p => ({
+        ...p,
+        name: p.name?.trim() || '',
+        category: toTitleCase(p.category),
+        brand: toTitleCase(p.brand),
+        compatibility: p.compatibility?.trim() || '',
+      })),
+    };
     
-    if (orderErr) throw orderErr;
-
-    // Save products
-    for (const p of order.products) {
-      const { error: prodErr } = await supabase.from('order_products').insert({
-        id: p.id,
-        order_id: order.id,
-        name: p.name,
-        quantity: p.quantity,
-        price: p.price,
-        category: p.category,
-        brand: p.brand,
-        compatibility: p.compatibility,
-        updated_at: new Date().toISOString(),
-      });
-      
-      if (prodErr) throw prodErr;
-    }
+    await indexedDBService.saveOrder(normalizedOrder);
   } catch (error) {
     console.error('Error saving order:', error);
     throw error;
@@ -51,50 +37,26 @@ export const saveOrder = async (order: Order): Promise<void> => {
 
 export const getOrders = async (): Promise<Order[]> => {
   try {
-    const { data: orders, error: ordersErr } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const orders = await indexedDBService.getOrders();
     
-    if (ordersErr) throw ordersErr;
-
-    const result: Order[] = [];
-    
-    for (const o of orders || []) {
-      const { data: prods, error: prodErr } = await supabase
-        .from('order_products')
-        .select('*')
-        .eq('order_id', o.id);
-      
-      if (prodErr) {
-        console.error('Error fetching products:', prodErr);
-        continue;
-      }
-
-      const order: Order = {
-        id: o.id,
-        date: o.date,
-        supplier: toTitleCase(o.supplier),
-        products: (prods || []).map((p: any) => ({
-          id: p.id,
+    // Filter and normalize orders
+    return orders
+      .filter(order => isValidUUID(order.id))
+      .filter(order => order.products.every(p => isValidUUID(p.id)))
+      .map(order => ({
+        ...order,
+        supplier: toTitleCase(order.supplier),
+        products: order.products.map(p => ({
+          ...p,
           name: p.name?.trim() || '',
-          quantity: p.quantity,
-          price: Number(p.price),
           category: toTitleCase(p.category),
           brand: toTitleCase(p.brand),
           compatibility: p.compatibility?.trim() || '',
-        })).filter((p: any) => isValidUUID(p.id)),
-        totalAmount: Number(o.total_amount || 0),
-        createdAt: o.created_at,
-        updatedAt: o.updated_at,
-      };
-      
-      if (isValidUUID(order.id)) {
-        result.push(order);
-      }
-    }
-    
-    return result;
+          price: Number(p.price),
+          quantity: Number(p.quantity),
+        })),
+        totalAmount: Number(order.totalAmount),
+      }));
   } catch (error) {
     console.error('Error fetching orders:', error);
     return [];
@@ -103,21 +65,7 @@ export const getOrders = async (): Promise<Order[]> => {
 
 export const deleteOrder = async (orderId: string): Promise<void> => {
   try {
-    // Delete products first (foreign key constraint)
-    const { error: prodErr } = await supabase
-      .from('order_products')
-      .delete()
-      .eq('order_id', orderId);
-    
-    if (prodErr) throw prodErr;
-
-    // Delete order
-    const { error: orderErr } = await supabase
-      .from('orders')
-      .delete()
-      .eq('id', orderId);
-    
-    if (orderErr) throw orderErr;
+    await indexedDBService.deleteOrder(orderId);
   } catch (error) {
     console.error('Error deleting order:', error);
     throw error;
@@ -126,37 +74,21 @@ export const deleteOrder = async (orderId: string): Promise<void> => {
 
 export const updateOrder = async (order: Order): Promise<void> => {
   try {
-    // Update order
-    const { error: orderErr } = await supabase.from('orders').upsert({
-      id: order.id,
-      date: order.date,
-      supplier: order.supplier,
-      total_amount: order.totalAmount,
-      created_at: order.createdAt || new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    // Normalize data before updating
+    const normalizedOrder = {
+      ...order,
+      supplier: toTitleCase(order.supplier),
+      products: order.products.map(p => ({
+        ...p,
+        name: p.name?.trim() || '',
+        category: toTitleCase(p.category),
+        brand: toTitleCase(p.brand),
+        compatibility: p.compatibility?.trim() || '',
+      })),
+      updatedAt: new Date().toISOString(),
+    };
     
-    if (orderErr) throw orderErr;
-
-    // Delete existing products and re-insert
-    await supabase.from('order_products').delete().eq('order_id', order.id);
-    
-    // Insert updated products
-    for (const p of order.products) {
-      const { error: prodErr } = await supabase.from('order_products').upsert({
-        id: p.id,
-        order_id: order.id,
-        name: p.name,
-        quantity: p.quantity,
-        price: p.price,
-        category: p.category,
-        brand: p.brand,
-        compatibility: p.compatibility,
-        updated_at: new Date().toISOString(),
-      });
-      
-      if (prodErr) throw prodErr;
-    }
+    await indexedDBService.updateOrder(normalizedOrder);
   } catch (error) {
     console.error('Error updating order:', error);
     throw error;
