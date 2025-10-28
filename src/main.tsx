@@ -34,38 +34,6 @@ window.addEventListener('unhandledrejection', (ev: PromiseRejectionEvent) => {
   }
 });
 
-(async function boot(){
-  // Register service worker for PWA
-  registerServiceWorker();
-  
-  try{
-    // Attempt to perform an initial supabase sync if configured
-    const envHasSupabase = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-    if (envHasSupabase) {
-      // dynamic import to avoid loading supabase in dev if not configured
-      const sync = await import('./lib/sync');
-      const storage = await import('./lib/storage');
-      
-      // First pull from cloud to get any existing data
-      try { 
-        await sync.pullFromSupabase(); 
-      } catch(e) { 
-        console.error('initial pull failed', e); 
-      }
-      
-      // Then push any local data to cloud (including demo data)
-      try {
-        const localOrders = storage.getOrders();
-        if (localOrders.length > 0) {
-          await sync.pushToSupabase(localOrders);
-        }
-      } catch(e) {
-        console.error('initial push failed', e);
-      }
-    }
-  }catch(e){
-    // ignore
-  }
-
-  createRoot(document.getElementById("root")!).render(<App />);
-})();
+// Register service worker for PWA and render the app
+registerServiceWorker();
+createRoot(document.getElementById("root")!).render(<App />);

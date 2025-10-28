@@ -1,8 +1,7 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, List, History, Search, RefreshCw } from 'lucide-react';
+import { ShoppingCart, List, History, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 import InstallPWA from './InstallPWA';
 
 interface LayoutProps {
@@ -11,7 +10,6 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
-  const [isSyncing, setIsSyncing] = useState(false);
 
   const navItems = [
     { path: '/', label: 'Price List', icon: List },
@@ -19,27 +17,9 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/order-history', label: 'Order History', icon: History },
   ];
 
-  const isPriceList = location.pathname === '/';
-
   const handleSearchToggle = () => {
     // dispatch a global event that PriceList listens to
     window.dispatchEvent(new CustomEvent('toggle-search'));
-  };
-
-  const handleManualSync = async () => {
-    setIsSyncing(true);
-    try {
-      const { pushToSupabase } = await import('@/lib/sync');
-      const { getOrders } = await import('@/lib/storage');
-      const orders = getOrders();
-      await pushToSupabase(orders);
-      toast.success('Data synced to database successfully!');
-    } catch (error) {
-      console.error('Sync error:', error);
-      toast.error('Failed to sync data to database');
-    } finally {
-      setIsSyncing(false);
-    }
   };
 
   return (
@@ -76,16 +56,6 @@ const Layout = ({ children }: LayoutProps) => {
 
               {/* Install PWA button */}
               <InstallPWA />
-
-              {/* Sync button */}
-              <button
-                aria-label="Sync to database"
-                onClick={handleManualSync}
-                disabled={isSyncing}
-                className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <RefreshCw className={cn("w-5 h-5", isSyncing && "animate-spin")} />
-              </button>
 
               {/* Search button available on all pages; PriceList listens for toggle-search event */}
               <button

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { getOrders, deleteOrder, updateOrder } from '@/lib/storage';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,10 +25,27 @@ import { Label } from '@/components/ui/label';
 import { formatDate } from '@/lib/utils';
 
 const OrderHistory = () => {
-  const [orders, setOrders] = useState(getOrders());
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Load orders from Supabase
+  useEffect(() => {
+    const loadOrders = async () => {
+      try {
+        const data = await getOrders();
+        setOrders(data);
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        toast.error('Failed to load orders');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadOrders();
+  }, []);
 
   // global search (toggled from top nav)
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,10 +64,16 @@ const OrderHistory = () => {
     return () => window.removeEventListener('toggle-search', onToggle as EventListener);
   }, []);
 
-  const handleDelete = (orderId: string) => {
-    deleteOrder(orderId);
-    setOrders(getOrders());
-    toast.success('Order deleted successfully');
+  const handleDelete = async (orderId: string) => {
+    try {
+      await deleteOrder(orderId);
+      const data = await getOrders();
+      setOrders(data);
+      toast.success('Order deleted successfully');
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast.error('Failed to delete order');
+    }
   };
 
   const toggleExpand = (orderId: string) => {
@@ -75,8 +98,7 @@ const OrderHistory = () => {
   const [editOrder, setEditOrder] = useState<Order | null>(null);
 
   // suggestion options (from existing stored orders)
-  const suggestionOptions = React.useMemo(() => {
-    const orders = getOrders();
+  const suggestionOptions = useMemo(() => {
     const suppliers = new Set<string>();
     const names = new Set<string>();
     const categories = new Set<string>();
@@ -124,7 +146,7 @@ const OrderHistory = () => {
     setEditOrder(updated);
   };
 
-  const saveEditedOrder = () => {
+  const saveEditedOrder = async () => {
     if (!editOrder) return;
     // validate
     if (!editOrder.supplier || editOrder.supplier.trim() === '') {
@@ -138,12 +160,19 @@ const OrderHistory = () => {
     }
     const total = editOrder.products.reduce((s, p) => s + Number(p.price || 0) * Number(p.quantity || 0), 0);
     const toSave = { ...editOrder, totalAmount: total } as Order;
-    updateOrder(toSave);
-    setOrders(getOrders());
-    setSelectedOrder(toSave);
-    setEditOrder(toSave);
-    setEditing(false);
-    toast.success('Order updated');
+    
+    try {
+      await updateOrder(toSave);
+      const data = await getOrders();
+      setOrders(data);
+      setSelectedOrder(toSave);
+      setEditOrder(toSave);
+      setEditing(false);
+      toast.success('Order updated');
+    } catch (error) {
+      console.error('Error updating order:', error);
+      toast.error('Failed to update order');
+    }
   };
 
   const [sortBy, setSortBy] = useState<'date' | 'supplier-asc' | 'supplier-desc'>('date');
@@ -167,7 +196,7 @@ const OrderHistory = () => {
     return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [orders]);
 
-  const displayedOrders = React.useMemo(() => {
+  const displayedOrders = useMemo(() => {
     let copy = [...orders];
 
     if (filterSupplier !== 'all') {
@@ -198,6 +227,16 @@ const OrderHistory = () => {
     }
     return copy;
   }, [orders, sortBy, filterSupplier, searchQuery]);
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto">

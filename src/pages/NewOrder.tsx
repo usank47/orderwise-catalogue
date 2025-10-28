@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product, Order } from '@/types/order';
 import { getOrders, saveOrder } from '@/lib/storage';
@@ -33,34 +33,40 @@ const NewOrder = () => {
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [brandOptions, setBrandOptions] = useState<string[]>([]);
   const [compatibilityOptions, setCompatibilityOptions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    const orders = getOrders();
-    const suppliersSet = new Set<string>();
-    const productSet = new Set<string>();
-    const categorySet = new Set<string>();
-    const brandSet = new Set<string>();
-    const compSet = new Set<string>();
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const orders = await getOrders();
+        const suppliersSet = new Set<string>();
+        const productSet = new Set<string>();
+        const categorySet = new Set<string>();
+        const brandSet = new Set<string>();
+        const compSet = new Set<string>();
 
-    orders.forEach((o) => {
-      // Normalize supplier to title case for display
-      if (o.supplier) {
-        const normalized = o.supplier.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-        suppliersSet.add(normalized);
+        orders.forEach((o) => {
+          if (o.supplier) suppliersSet.add(o.supplier);
+          o.products?.forEach((p) => {
+            if (p.name) productSet.add(p.name);
+            if (p.category) categorySet.add(p.category);
+            if (p.brand) brandSet.add(p.brand);
+            if (p.compatibility) compSet.add(p.compatibility);
+          });
+        });
+
+        setSupplierOptions(Array.from(suppliersSet));
+        setProductNameOptions(Array.from(productSet));
+        setCategoryOptions(Array.from(categorySet));
+        setBrandOptions(Array.from(brandSet));
+        setCompatibilityOptions(Array.from(compSet));
+      } catch (error) {
+        console.error('Error loading options:', error);
+      } finally {
+        setLoading(false);
       }
-      o.products?.forEach((p) => {
-        if (p.name) productSet.add(p.name);
-        if (p.category) categorySet.add(p.category);
-        if (p.brand) brandSet.add(p.brand);
-        if (p.compatibility) compSet.add(p.compatibility);
-      });
-    });
-
-    setSupplierOptions(Array.from(suppliersSet));
-    setProductNameOptions(Array.from(productSet));
-    setCategoryOptions(Array.from(categorySet));
-    setBrandOptions(Array.from(brandSet));
-    setCompatibilityOptions(Array.from(compSet));
+    };
+    loadOptions();
   }, []);
 
   const handleProductChange = (index: number, field: keyof Product, value: string | number) => {
@@ -180,7 +186,7 @@ const NewOrder = () => {
     reader.readAsArrayBuffer(file);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!supplier || supplier.trim() === '') {
@@ -219,46 +225,14 @@ const NewOrder = () => {
       createdAt: new Date().toISOString(),
     };
 
-    saveOrder(order);
-
-    // After saving, update suggestion lists immediately
-    const orders = getOrders();
-    const suppliersSet = new Set(supplierOptions);
-    const productSet = new Set(productNameOptions);
-    const categorySet = new Set(categoryOptions);
-    const brandSet = new Set(brandOptions);
-    const compSet = new Set(compatibilityOptions);
-
-    suppliersSet.add(normalizedSupplier);
-    order.products.forEach((p) => {
-      if (p.name) productSet.add(p.name);
-      if (p.category) categorySet.add(p.category);
-      if (p.brand) brandSet.add(p.brand);
-      if (p.compatibility) compSet.add(p.compatibility || '');
-    });
-
-    // also include any values from existing orders
-    orders.forEach((o) => {
-      if (o.supplier) {
-        const norm = o.supplier.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-        suppliersSet.add(norm);
-      }
-      o.products.forEach((p) => {
-        if (p.name) productSet.add(p.name);
-        if (p.category) categorySet.add(p.category);
-        if (p.brand) brandSet.add(p.brand);
-        if (p.compatibility) compSet.add(p.compatibility || '');
-      });
-    });
-
-    setSupplierOptions(Array.from(suppliersSet).filter(Boolean));
-    setProductNameOptions(Array.from(productSet).filter(Boolean));
-    setCategoryOptions(Array.from(categorySet).filter(Boolean));
-    setBrandOptions(Array.from(brandSet).filter(Boolean));
-    setCompatibilityOptions(Array.from(compSet).filter(Boolean));
-
-    toast.success('Order uploaded successfully!');
-    navigate('/order-history');
+    try {
+      await saveOrder(order);
+      toast.success('Order uploaded successfully!');
+      navigate('/order-history');
+    } catch (error) {
+      console.error('Error saving order:', error);
+      toast.error('Failed to save order. Please try again.');
+    }
   };
 
   return (

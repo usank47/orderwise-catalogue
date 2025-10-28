@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { getOrders } from '@/lib/storage';
+import { toast } from 'sonner';
 import { formatDate, formatDateTime } from '@/lib/utils';
 import { Product } from '@/types/order';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,7 +26,24 @@ const PriceList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const orders = getOrders();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load orders from Supabase
+  useEffect(() => {
+    const loadOrders = async () => {
+      try {
+        const data = await getOrders();
+        setOrders(data);
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        toast.error('Failed to load orders');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadOrders();
+  }, []);
 
   const searchRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
@@ -80,6 +98,16 @@ const PriceList = () => {
 
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [filteredProducts, groupBy]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading price list...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">

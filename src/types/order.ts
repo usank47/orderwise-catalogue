@@ -15,6 +15,7 @@ export interface Order {
   products: Product[];
   totalAmount: number;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type SortField = 'category' | 'brand' | 'supplier';

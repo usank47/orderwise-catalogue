@@ -1,47 +1,5 @@
 import { Order } from '@/types/order';
-
-const ORDERS_KEY = 'orders';
-
-// try to initialize native storage in background (if Capacitor plugins installed at runtime)
-import { initNativeStorage, isNativeAvailable, nativeSaveOrders, nativeGetOrders } from './nativeStorage';
-
-initNativeStorage().then(async () => {
-  if (isNativeAvailable()) {
-    // migrate current localStorage data to native storage if native has no data yet
-    try {
-      const native = await nativeGetOrders();
-      if (native && native.length === 0) {
-        const current = getOrders();
-        await nativeSaveOrders(current);
-      }
-    } catch (e) {
-      // ignore
-    }
-  }
-}).catch(() => {});
-
-export const saveOrder = (order: Order): void => {
-  const orders = getOrders();
-  orders.push(order);
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-  // also attempt to write to native storage and sync to Supabase asynchronously
-  (async () => {
-    try {
-      if (isNativeAvailable()) {
-        const native = await nativeGetOrders();
-        if (native) {
-          native.push(order);
-          await nativeSaveOrders(native);
-        }
-      }
-      // push to Supabase
-      const { pushToSupabase } = await import('./sync');
-      await pushToSupabase([order]);
-    } catch (e) {
-      console.error('sync error:', e);
-    }
-  })();
-};
+import { supabase } from '@/integrations/supabase/client';
 
 // UUID validation regex
 const isValidUUID = (id: string): boolean => {
@@ -55,91 +13,152 @@ const toTitleCase = (text: string): string => {
   return text.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 };
 
-export const getOrders = (): Order[] => {
-  const ordersJson = localStorage.getItem(ORDERS_KEY);
-  let local = ordersJson ? JSON.parse(ordersJson) : [];
-  
-  // Filter out any orders with invalid UUIDs (demo data) and normalize text fields
-  local = local.filter((order: Order) => {
-    const validOrderId = isValidUUID(order.id);
-    const validProductIds = order.products.every((p: any) => isValidUUID(p.id));
-    return validOrderId && validProductIds;
-  }).map((order: Order) => ({
-    ...order,
-    supplier: toTitleCase(order.supplier),
-    products: order.products.map((p: any) => ({
-      ...p,
-      category: toTitleCase(p.category),
-      brand: toTitleCase(p.brand),
-      name: p.name?.trim() || '',
-      compatibility: p.compatibility?.trim() || '',
-    })),
-  }));
-  
-  // Save the cleaned and normalized data back
-  if (ordersJson) {
-    const currentData = JSON.parse(ordersJson);
-    if (JSON.stringify(currentData) !== JSON.stringify(local)) {
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(local));
+export const saveOrder = async (order: Order): Promise<void> => {
+  try {
+    // Save order to Supabase
+    const { error: orderErr } = await supabase.from('orders').insert({
+      id: order.id,
+      date: order.date,
+      supplier: order.supplier,
+      total_amount: order.totalAmount,
+      created_at: order.createdAt || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    
+    if (orderErr) throw orderErr;
+
+    // Save products
+    for (const p of order.products) {
+      const { error: prodErr } = await supabase.from('order_products').insert({
+        id: p.id,
+        order_id: order.id,
+        name: p.name,
+        quantity: p.quantity,
+        price: p.price,
+        category: p.category,
+        brand: p.brand,
+        compatibility: p.compatibility,
+        updated_at: new Date().toISOString(),
+      });
+      
+      if (prodErr) throw prodErr;
     }
+  } catch (error) {
+    console.error('Error saving order:', error);
+    throw error;
   }
-  
-  // if native is available, attempt to read native data asynchronously and reconcile
-  (async () => {
-    try {
-      if (isNativeAvailable()) {
-        const native = await nativeGetOrders();
-        if (native && Array.isArray(native) && native.length > 0) {
-          // prefer native, and sync it back to localStorage
-          localStorage.setItem(ORDERS_KEY, JSON.stringify(native));
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-  })();
-  return local;
 };
 
-export const deleteOrder = (orderId: string): void => {
-  const orders = getOrders();
-  const filtered = orders.filter(order => order.id !== orderId);
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(filtered));
-  (async () => {
-    try {
-      if (isNativeAvailable()) {
-        await nativeSaveOrders(filtered);
+export const getOrders = async (): Promise<Order[]> => {
+  try {
+    const { data: orders, error: ordersErr } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (ordersErr) throw ordersErr;
+
+    const result: Order[] = [];
+    
+    for (const o of orders || []) {
+      const { data: prods, error: prodErr } = await supabase
+        .from('order_products')
+        .select('*')
+        .eq('order_id', o.id);
+      
+      if (prodErr) {
+        console.error('Error fetching products:', prodErr);
+        continue;
       }
-      // sync to Supabase by pushing all orders
-      const { pushToSupabase } = await import('./sync');
-      await pushToSupabase(filtered);
-    } catch (e) {
-      console.error('sync error:', e);
+
+      const order: Order = {
+        id: o.id,
+        date: o.date,
+        supplier: toTitleCase(o.supplier),
+        products: (prods || []).map((p: any) => ({
+          id: p.id,
+          name: p.name?.trim() || '',
+          quantity: p.quantity,
+          price: Number(p.price),
+          category: toTitleCase(p.category),
+          brand: toTitleCase(p.brand),
+          compatibility: p.compatibility?.trim() || '',
+        })).filter((p: any) => isValidUUID(p.id)),
+        totalAmount: Number(o.total_amount || 0),
+        createdAt: o.created_at,
+        updatedAt: o.updated_at,
+      };
+      
+      if (isValidUUID(order.id)) {
+        result.push(order);
+      }
     }
-  })();
+    
+    return result;
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    return [];
+  }
 };
 
-export const updateOrder = (order: Order): void => {
-  const orders = getOrders();
-  const idx = orders.findIndex((o) => o.id === order.id);
-  if (idx >= 0) {
-    orders[idx] = order;
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-  } else {
-    // fallback to append if not found
-    orders.push(order);
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+export const deleteOrder = async (orderId: string): Promise<void> => {
+  try {
+    // Delete products first (foreign key constraint)
+    const { error: prodErr } = await supabase
+      .from('order_products')
+      .delete()
+      .eq('order_id', orderId);
+    
+    if (prodErr) throw prodErr;
+
+    // Delete order
+    const { error: orderErr } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', orderId);
+    
+    if (orderErr) throw orderErr;
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    throw error;
   }
-  (async () => {
-    try {
-      if (isNativeAvailable()) {
-        await nativeSaveOrders(orders);
-      }
-      // sync to Supabase
-      const { pushToSupabase } = await import('./sync');
-      await pushToSupabase([order]);
-    } catch (e) {
-      console.error('sync error:', e);
+};
+
+export const updateOrder = async (order: Order): Promise<void> => {
+  try {
+    // Update order
+    const { error: orderErr } = await supabase.from('orders').upsert({
+      id: order.id,
+      date: order.date,
+      supplier: order.supplier,
+      total_amount: order.totalAmount,
+      created_at: order.createdAt || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    
+    if (orderErr) throw orderErr;
+
+    // Delete existing products and re-insert
+    await supabase.from('order_products').delete().eq('order_id', order.id);
+    
+    // Insert updated products
+    for (const p of order.products) {
+      const { error: prodErr } = await supabase.from('order_products').upsert({
+        id: p.id,
+        order_id: order.id,
+        name: p.name,
+        quantity: p.quantity,
+        price: p.price,
+        category: p.category,
+        brand: p.brand,
+        compatibility: p.compatibility,
+        updated_at: new Date().toISOString(),
+      });
+      
+      if (prodErr) throw prodErr;
     }
-  })();
+  } catch (error) {
+    console.error('Error updating order:', error);
+    throw error;
+  }
 };
