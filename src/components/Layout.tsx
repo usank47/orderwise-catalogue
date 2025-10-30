@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingCart, List, History, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import InstallPWA from './InstallPWA';
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,11 +12,12 @@ const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'New Order', icon: ShoppingCart },
-    { path: '/price-list', label: 'Price List', icon: List },
+    { path: '/', label: 'Price List', icon: List },
+    { path: '/new-order', label: 'New Order', icon: ShoppingCart },
     { path: '/order-history', label: 'Order History', icon: History },
   ];
 
+  // whether current page is price list (used for contextual UI)
   const isPriceList = location.pathname === '/price-list';
 
   const handleSearchToggle = () => {
@@ -55,6 +57,8 @@ const Layout = ({ children }: LayoutProps) => {
                 })}
               </div>
 
+              {/* Install PWA button */}
+              <InstallPWA />
               {/* Search button available on all pages; PriceList listens for toggle-search event */}
               <button
                 aria-label="Toggle search"

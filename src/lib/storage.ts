@@ -63,12 +63,11 @@ const initializeDemoData = (): void => {
 // Initialize demo data on module load
 initializeDemoData();
 
-// try to initialize native storage in background (if Capacitor plugins installed at runtime)
-import { initNativeStorage, isNativeAvailable, nativeSaveOrders, nativeGetOrders } from './nativeStorage';
+// Native storage adapter (optional)
+import { initNativeStorage, isNativeAvailable, nativeGetOrders, nativeSaveOrders } from './nativeStorage';
 
 initNativeStorage().then(async () => {
   if (isNativeAvailable()) {
-    // migrate current localStorage data to native storage if native has no data yet
     try {
       const native = await nativeGetOrders();
       if (native && native.length === 0) {
@@ -85,7 +84,6 @@ export const saveOrder = (order: Order): void => {
   const orders = getOrders();
   orders.push(order);
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-  // also attempt to write to native storage asynchronously
   (async () => {
     try {
       if (isNativeAvailable()) {
@@ -104,13 +102,11 @@ export const saveOrder = (order: Order): void => {
 export const getOrders = (): Order[] => {
   const ordersJson = localStorage.getItem(ORDERS_KEY);
   const local = ordersJson ? JSON.parse(ordersJson) : [];
-  // if native is available, attempt to read native data asynchronously and reconcile
   (async () => {
     try {
       if (isNativeAvailable()) {
         const native = await nativeGetOrders();
         if (native && Array.isArray(native) && native.length > 0) {
-          // prefer native, and sync it back to localStorage
           localStorage.setItem(ORDERS_KEY, JSON.stringify(native));
         }
       }
@@ -141,7 +137,6 @@ export const updateOrder = (order: Order): void => {
     orders[idx] = order;
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
   } else {
-    // fallback to append if not found
     orders.push(order);
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
   }

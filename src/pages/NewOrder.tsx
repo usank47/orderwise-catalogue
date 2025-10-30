@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product, Order } from '@/types/order';
 import { getOrders, saveOrder } from '@/lib/storage';
@@ -7,8 +7,9 @@ import ComboBox from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ProductForm from '@/components/ProductForm';
-import { Plus, Send } from 'lucide-react';
+import { Plus, Send, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 const NewOrder = () => {
   const navigate = useNavigate();
@@ -32,30 +33,40 @@ const NewOrder = () => {
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [brandOptions, setBrandOptions] = useState<string[]>([]);
   const [compatibilityOptions, setCompatibilityOptions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    const orders = getOrders();
-    const suppliersSet = new Set<string>();
-    const productSet = new Set<string>();
-    const categorySet = new Set<string>();
-    const brandSet = new Set<string>();
-    const compSet = new Set<string>();
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const orders = await Promise.resolve(getOrders());
+        const suppliersSet = new Set<string>();
+        const productSet = new Set<string>();
+        const categorySet = new Set<string>();
+        const brandSet = new Set<string>();
+        const compSet = new Set<string>();
 
-    orders.forEach((o) => {
-      if (o.supplier) suppliersSet.add(o.supplier);
-      o.products?.forEach((p) => {
-        if (p.name) productSet.add(p.name);
-        if (p.category) categorySet.add(p.category);
-        if (p.brand) brandSet.add(p.brand);
-        if (p.compatibility) compSet.add(p.compatibility);
-      });
-    });
+        orders.forEach((o) => {
+          if (o.supplier) suppliersSet.add(o.supplier);
+          o.products?.forEach((p) => {
+            if (p.name) productSet.add(p.name);
+            if (p.category) categorySet.add(p.category);
+            if (p.brand) brandSet.add(p.brand);
+            if (p.compatibility) compSet.add(p.compatibility);
+          });
+        });
 
-    setSupplierOptions(Array.from(suppliersSet));
-    setProductNameOptions(Array.from(productSet));
-    setCategoryOptions(Array.from(categorySet));
-    setBrandOptions(Array.from(brandSet));
-    setCompatibilityOptions(Array.from(compSet));
+        setSupplierOptions(Array.from(suppliersSet));
+        setProductNameOptions(Array.from(productSet));
+        setCategoryOptions(Array.from(categorySet));
+        setBrandOptions(Array.from(brandSet));
+        setCompatibilityOptions(Array.from(compSet));
+      } catch (error) {
+        console.error('Error loading options:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadOptions();
   }, []);
 
   const handleProductChange = (index: number, field: keyof Product, value: string | number) => {
@@ -99,7 +110,83 @@ const NewOrder = () => {
     return products.reduce((sum, p) => sum + Number(p.price || 0) * Number(p.quantity || 0), 0);
   }, [products]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const downloadSampleExcel = () => {
+    const sampleData = [
+      {
+        'Product Name': 'Sample Product 1',
+        'Quantity': 10,
+        'Price': 100,
+        'Category': 'Electronics',
+        'Brand': 'Sample Brand',
+        'Compatibility': 'Universal'
+      },
+      {
+        'Product Name': 'Sample Product 2',
+        'Quantity': 5,
+        'Price': 250,
+        'Category': 'Accessories',
+        'Brand': 'Another Brand',
+        'Compatibility': 'Model XYZ'
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+    XLSX.writeFile(workbook, 'order_template.xlsx');
+    toast.success('Sample template downloaded!');
+  };
+
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet) as any[];
+
+        if (jsonData.length === 0) {
+          toast.error('Excel file is empty');
+          return;
+        }
+
+        const parsedProducts: Product[] = jsonData.map((row) => ({
+          id: crypto.randomUUID(),
+          name: row['Product Name'] || '',
+          quantity: Number(row['Quantity']) || 1,
+          price: Number(row['Price']) || 0,
+          category: row['Category'] || '',
+          brand: row['Brand'] || '',
+          compatibility: row['Compatibility'] || '',
+        }));
+
+        const invalidCount = parsedProducts.filter(
+          (p) => !p.name || !p.category || !p.brand || p.quantity <= 0 || p.price <= 0
+        ).length;
+
+        if (invalidCount > 0) {
+          toast.error(`${invalidCount} product(s) have missing or invalid data. Please check the file.`);
+          return;
+        }
+
+        setProducts(parsedProducts);
+        toast.success(`${parsedProducts.length} products loaded from Excel!`);
+
+        // Reset file input
+        e.target.value = '';
+      } catch (error) {
+        console.error('Excel parsing error:', error);
+        toast.error('Failed to parse Excel file. Please check the format.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!supplier || supplier.trim() === '') {
@@ -116,52 +203,69 @@ const NewOrder = () => {
       return;
     }
 
+    // Normalize all text fields to title case
+    const normalizedSupplier = supplier.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+
+    const normalizedProducts = products.map(p => ({
+      ...p,
+      quantity: Number(p.quantity),
+      price: Number(p.price),
+      category: p.category.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
+      brand: p.brand.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
+      name: p.name.trim(),
+      compatibility: p.compatibility?.trim() || '',
+    }));
+
     const order: Order = {
       id: crypto.randomUUID(),
       date,
-      supplier,
-      products: products.map(p => ({ ...p, quantity: Number(p.quantity), price: Number(p.price) })),
+      supplier: normalizedSupplier,
+      products: normalizedProducts,
       totalAmount,
       createdAt: new Date().toISOString(),
     };
 
-    saveOrder(order);
+    try {
+      await Promise.resolve(saveOrder(order));
+      // update suggestion lists immediately
+      const orders = await Promise.resolve(getOrders());
+      const suppliersSet = new Set(supplierOptions);
+      const productSet = new Set(productNameOptions);
+      const categorySet = new Set(categoryOptions);
+      const brandSet = new Set(brandOptions);
+      const compSet = new Set(compatibilityOptions);
 
-    // After saving, update suggestion lists immediately
-    const orders = getOrders();
-    const suppliersSet = new Set(supplierOptions);
-    const productSet = new Set(productNameOptions);
-    const categorySet = new Set(categoryOptions);
-    const brandSet = new Set(brandOptions);
-    const compSet = new Set(compatibilityOptions);
-
-    suppliersSet.add(order.supplier);
-    order.products.forEach((p) => {
-      if (p.name) productSet.add(p.name);
-      if (p.category) categorySet.add(p.category);
-      if (p.brand) brandSet.add(p.brand);
-      if (p.compatibility) compSet.add(p.compatibility || '');
-    });
-
-    // also include any values from existing orders
-    orders.forEach((o) => {
-      if (o.supplier) suppliersSet.add(o.supplier);
-      o.products.forEach((p) => {
+      suppliersSet.add(order.supplier);
+      order.products.forEach((p) => {
         if (p.name) productSet.add(p.name);
         if (p.category) categorySet.add(p.category);
         if (p.brand) brandSet.add(p.brand);
         if (p.compatibility) compSet.add(p.compatibility || '');
       });
-    });
 
-    setSupplierOptions(Array.from(suppliersSet).filter(Boolean));
-    setProductNameOptions(Array.from(productSet).filter(Boolean));
-    setCategoryOptions(Array.from(categorySet).filter(Boolean));
-    setBrandOptions(Array.from(brandSet).filter(Boolean));
-    setCompatibilityOptions(Array.from(compSet).filter(Boolean));
+      // also include any values from existing orders
+      orders.forEach((o) => {
+        if (o.supplier) suppliersSet.add(o.supplier);
+        o.products.forEach((p) => {
+          if (p.name) productSet.add(p.name);
+          if (p.category) categorySet.add(p.category);
+          if (p.brand) brandSet.add(p.brand);
+          if (p.compatibility) compSet.add(p.compatibility || '');
+        });
+      });
 
-    toast.success('Order uploaded successfully!');
-    navigate('/order-history');
+      setSupplierOptions(Array.from(suppliersSet).filter(Boolean));
+      setProductNameOptions(Array.from(productSet).filter(Boolean));
+      setCategoryOptions(Array.from(categorySet).filter(Boolean));
+      setBrandOptions(Array.from(brandSet).filter(Boolean));
+      setCompatibilityOptions(Array.from(compSet).filter(Boolean));
+
+      toast.success('Order uploaded successfully!');
+      navigate('/order-history');
+    } catch (error) {
+      console.error('Error saving order:', error);
+      toast.error('Failed to save order. Please try again.');
+    }
   };
 
   return (
@@ -217,15 +321,27 @@ const NewOrder = () => {
             />
           ))}
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={addProduct}
-            className="w-full border-dashed border-2 hover:border-primary hover:text-primary"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Product
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addProduct}
+              className="w-full border-dashed border-2 hover:border-primary hover:text-primary"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <input id="excelUpload" type="file" accept=".xlsx,.xls" onChange={handleExcelUpload} className="hidden" />
+              <Button type="button" onClick={() => document.getElementById('excelUpload')?.click()}>
+                <Upload className="w-4 h-4 mr-2" /> Upload Excel
+              </Button>
+              <Button type="button" onClick={downloadSampleExcel}>
+                <Download className="w-4 h-4 mr-2" /> Download Template
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="mt-4 p-4 bg-muted/20 rounded-lg">

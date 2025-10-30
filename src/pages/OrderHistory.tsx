@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { getOrders, deleteOrder, updateOrder } from '@/lib/storage';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,8 @@ import { Label } from '@/components/ui/label';
 import { formatDate } from '@/lib/utils';
 
 const OrderHistory = () => {
-  const [orders, setOrders] = useState(getOrders());
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -47,10 +48,32 @@ const OrderHistory = () => {
     return () => window.removeEventListener('toggle-search', onToggle as EventListener);
   }, []);
 
-  const handleDelete = (orderId: string) => {
-    deleteOrder(orderId);
-    setOrders(getOrders());
-    toast.success('Order deleted successfully');
+  // Load orders
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await Promise.resolve(getOrders());
+        setOrders(data || []);
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        toast.error('Failed to load orders');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleDelete = async (orderId: string) => {
+    try {
+      await Promise.resolve(deleteOrder(orderId));
+      const data = await Promise.resolve(getOrders());
+      setOrders(data);
+      toast.success('Order deleted successfully');
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast.error('Failed to delete order');
+    }
   };
 
   const toggleExpand = (orderId: string) => {
@@ -75,8 +98,7 @@ const OrderHistory = () => {
   const [editOrder, setEditOrder] = useState<Order | null>(null);
 
   // suggestion options (from existing stored orders)
-  const suggestionOptions = React.useMemo(() => {
-    const orders = getOrders();
+  const suggestionOptions = useMemo(() => {
     const suppliers = new Set<string>();
     const names = new Set<string>();
     const categories = new Set<string>();
@@ -124,7 +146,7 @@ const OrderHistory = () => {
     setEditOrder(updated);
   };
 
-  const saveEditedOrder = () => {
+  const saveEditedOrder = async () => {
     if (!editOrder) return;
     // validate
     if (!editOrder.supplier || editOrder.supplier.trim() === '') {
@@ -138,12 +160,19 @@ const OrderHistory = () => {
     }
     const total = editOrder.products.reduce((s, p) => s + Number(p.price || 0) * Number(p.quantity || 0), 0);
     const toSave = { ...editOrder, totalAmount: total } as Order;
-    updateOrder(toSave);
-    setOrders(getOrders());
-    setSelectedOrder(toSave);
-    setEditOrder(toSave);
-    setEditing(false);
-    toast.success('Order updated');
+
+    try {
+      await Promise.resolve(updateOrder(toSave));
+      const data = await Promise.resolve(getOrders());
+      setOrders(data);
+      setSelectedOrder(toSave);
+      setEditOrder(toSave);
+      setEditing(false);
+      toast.success('Order updated');
+    } catch (error) {
+      console.error('Error updating order:', error);
+      toast.error('Failed to update order');
+    }
   };
 
   const [sortBy, setSortBy] = useState<'date' | 'supplier-asc' | 'supplier-desc'>('date');
@@ -167,7 +196,7 @@ const OrderHistory = () => {
     return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [orders]);
 
-  const displayedOrders = React.useMemo(() => {
+  const displayedOrders = useMemo(() => {
     let copy = [...orders];
 
     if (filterSupplier !== 'all') {
@@ -198,6 +227,16 @@ const OrderHistory = () => {
     }
     return copy;
   }, [orders, sortBy, filterSupplier, searchQuery]);
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -312,183 +351,66 @@ const OrderHistory = () => {
                           >
                             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                           </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={(e) => e.stopPropagation()}>
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Order</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this order? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(order.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
                         </div>
                       </div>
 
                       {isExpanded && (
-                        <div className="mt-4 pt-4 border-t border-border">
-                          <div className="space-y-3">
-                            {order.products.map((product) => (
-                              <div
-                                key={product.id}
-                                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                              >
-                                <div className="flex-1">
-                                  <p className="font-medium">{product.name}</p>
-                                  <div className="flex gap-4 mt-1 text-sm text-muted-foreground">
-                                    <span>{product.category}</span>
-                                    <span>•</span>
-                                    <span>{product.brand}</span>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-medium">
-                                    ₹{product.price.toFixed(2)} × {product.quantity}
-                                  </p>
-                                  <p className="text-sm text-primary font-semibold">
-                                    ₹{(product.price * product.quantity).toFixed(2)}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
+                        <div className="border-t pt-4">
+                          <div className="grid grid-cols-6 gap-4 text-sm text-muted-foreground mb-3">
+                            <div>Product</div>
+                            <div>Brand</div>
+                            <div>Category</div>
+                            <div>Compatibility</div>
+                            <div className="col-span-2 text-right">Price</div>
                           </div>
+                          {order.products.map((p: any) => (
+                            <div key={p.id} className="grid grid-cols-6 gap-4 py-2 border-b">
+                              <div className="font-medium">{p.name}</div>
+                              <div>{p.brand}</div>
+                              <div>{p.category}</div>
+                              <div className="text-muted-foreground">{p.compatibility || '-'}</div>
+                              <div className="col-span-2 text-right">₹{Number(p.price || 0).toFixed(2)}</div>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
                   </Card>
-
-                  {/* Dialog for details */}
-                  <Dialog open={dialogOpen && selectedOrder?.id === order.id} onOpenChange={(open) => { if (!open) closeDetails(); }}>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Order Details - #{order.id.slice(0,8)}</DialogTitle>
-                      </DialogHeader>
-
-                      <div className="mt-4 flex flex-col">
-                        <div className="max-h-[60vh] overflow-auto pr-2 space-y-4">
-                          {!editing && (
-                            <>
-                              <p className="text-sm text-muted-foreground">Supplier</p>
-                              <p className="font-medium mb-2">{selectedOrder?.supplier}</p>
-
-                              <p className="text-sm text-muted-foreground">Date</p>
-                              <p className="font-medium mb-2">{selectedOrder ? formatDate(selectedOrder.date) : ''}</p>
-
-                              <div className="mt-4">
-                                <h4 className="font-semibold mb-2">Products</h4>
-                                <div className="space-y-2">
-                                  {selectedOrder?.products.map((p) => (
-                                    <div key={p.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                                      <div>
-                                        <p className="font-medium">{p.name}</p>
-                                        <p className="text-sm text-muted-foreground">{p.category} • {p.brand} {p.compatibility ? `• ${p.compatibility}` : ''}</p>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="font-medium">₹{p.price.toFixed(2)} × {p.quantity}</p>
-                                        <p className="text-sm text-primary font-semibold">₹{(p.price * p.quantity).toFixed(2)}</p>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <div className="mt-4 text-right">
-                                <p className="text-sm text-muted-foreground">Total</p>
-                                <p className="font-bold text-xl">₹{selectedOrder?.totalAmount.toFixed(2)}</p>
-                              </div>
-                            </>
-                          )}
-
-                          {editing && editOrder && (
-                            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); saveEditedOrder(); }}>
-                              <div>
-                                <Label htmlFor="edit-supplier">Supplier</Label>
-                                <ComboBox
-                                  id="edit-supplier"
-                                  value={editOrder.supplier}
-                                  onChange={(v) => setEditOrder({ ...editOrder, supplier: v })}
-                                  options={suggestionOptions.suppliers}
-                                  placeholder="Supplier"
-                                />
-                              </div>
-
-                              <div>
-                                <Label htmlFor="edit-date">Date</Label>
-                                <Input id="edit-date" type="datetime-local" value={new Date(editOrder.date).toISOString().slice(0,16)} onChange={(e) => setEditOrder({ ...editOrder, date: new Date(e.target.value).toISOString() })} className="mt-1.5" />
-                              </div>
-
-                              <div>
-                                <h4 className="font-semibold mb-2">Products</h4>
-                                <div className="space-y-2">
-                                  {editOrder.products.map((p, idx) => (
-                                    <ProductForm
-                                      key={p.id}
-                                      product={p}
-                                      index={idx}
-                                      onChange={handleEditProductChange}
-                                      onRemove={removeEditProduct}
-                                      showRemove={editOrder.products.length > 1}
-                                      productNameOptions={suggestionOptions.names}
-                                      categoryOptions={suggestionOptions.categories}
-                                      brandOptions={suggestionOptions.brands}
-                                      compatibilityOptions={suggestionOptions.compatibilities}
-                                    />
-                                  ))}
-                                  <Button type="button" variant="outline" onClick={addEditProduct} className="w-full">
-                                    Add Product
-                                  </Button>
-                                </div>
-                              </div>
-
-                              <div className="mt-4 text-right">
-                                <p className="text-sm text-muted-foreground">Total</p>
-                                <p className="font-bold text-xl">₹{editOrder.products.reduce((s, p) => s + Number(p.price || 0) * Number(p.quantity || 0), 0).toFixed(2)}</p>
-                              </div>
-                            </form>
-                          )}
-                        </div>
-
-                        <DialogFooter>
-                          {!editing && (
-                            <div className="flex gap-2 ml-auto">
-                              <Button variant="ghost" onClick={() => { setEditing(true); setEditOrder(selectedOrder ? { ...selectedOrder } as Order : null); }}>
-                                <Edit3 className="w-4 h-4 mr-2" /> Edit
-                              </Button>
-                              <DialogClose asChild>
-                                <Button variant="outline"><X className="w-4 h-4 mr-2"/>Close</Button>
-                              </DialogClose>
-                            </div>
-                          )}
-
-                          {editing && (
-                            <div className="flex gap-2 ml-auto">
-                              <Button variant="outline" onClick={() => { setEditing(false); setEditOrder(selectedOrder ? { ...selectedOrder } as Order : null); }}>Cancel</Button>
-                              <Button onClick={saveEditedOrder} className="bg-gradient-primary">Save</Button>
-                            </div>
-                          )}
-                        </DialogFooter>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
                 </div>
               );
-            })}
+          })}
         </div>
       )}
+
+      {/* Edit dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {editOrder && (
+              <div>
+                <Label>Supplier</Label>
+                <Input value={editOrder.supplier} onChange={(e) => setEditOrder({ ...editOrder, supplier: e.target.value })} />
+                <h3 className="mt-4 font-semibold">Products</h3>
+                {editOrder.products.map((p, i) => (
+                  <ProductForm key={p.id} product={p} index={i} onChange={(idx, field, val) => handleEditProductChange(idx, field, val)} onRemove={removeEditProduct} showRemove={editOrder.products.length > 1} productNameOptions={suggestionOptions.names} categoryOptions={suggestionOptions.categories} brandOptions={suggestionOptions.brands} compatibilityOptions={suggestionOptions.compatibilities} />
+                ))}
+                <div className="mt-2">
+                  <Button onClick={addEditProduct}>Add Product</Button>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={saveEditedOrder}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
