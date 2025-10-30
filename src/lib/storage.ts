@@ -65,6 +65,8 @@ initializeDemoData();
 
 // Native storage adapter (optional)
 import { initNativeStorage, isNativeAvailable, nativeGetOrders, nativeSaveOrders } from './nativeStorage';
+import { isSupabaseEnabled } from './supabase';
+import { pushToSupabase } from './sync';
 
 initNativeStorage().then(async () => {
   if (isNativeAvailable()) {
