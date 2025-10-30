@@ -38,7 +38,7 @@ const NewOrder = () => {
   useEffect(() => {
     const loadOptions = async () => {
       try {
-        const orders = await getOrders();
+        const orders = await Promise.resolve(getOrders());
         const suppliersSet = new Set<string>();
         const productSet = new Set<string>();
         const categorySet = new Set<string>();
@@ -175,7 +175,7 @@ const NewOrder = () => {
 
         setProducts(parsedProducts);
         toast.success(`${parsedProducts.length} products loaded from Excel!`);
-        
+
         // Reset file input
         e.target.value = '';
       } catch (error) {
@@ -205,7 +205,7 @@ const NewOrder = () => {
 
     // Normalize all text fields to title case
     const normalizedSupplier = supplier.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-    
+
     const normalizedProducts = products.map(p => ({
       ...p,
       quantity: Number(p.quantity),
@@ -215,7 +215,7 @@ const NewOrder = () => {
       name: p.name.trim(),
       compatibility: p.compatibility?.trim() || '',
     }));
-    
+
     const order: Order = {
       id: crypto.randomUUID(),
       date,
@@ -226,7 +226,40 @@ const NewOrder = () => {
     };
 
     try {
-      await saveOrder(order);
+      await Promise.resolve(saveOrder(order));
+      // update suggestion lists immediately
+      const orders = await Promise.resolve(getOrders());
+      const suppliersSet = new Set(supplierOptions);
+      const productSet = new Set(productNameOptions);
+      const categorySet = new Set(categoryOptions);
+      const brandSet = new Set(brandOptions);
+      const compSet = new Set(compatibilityOptions);
+
+      suppliersSet.add(order.supplier);
+      order.products.forEach((p) => {
+        if (p.name) productSet.add(p.name);
+        if (p.category) categorySet.add(p.category);
+        if (p.brand) brandSet.add(p.brand);
+        if (p.compatibility) compSet.add(p.compatibility || '');
+      });
+
+      // also include any values from existing orders
+      orders.forEach((o) => {
+        if (o.supplier) suppliersSet.add(o.supplier);
+        o.products.forEach((p) => {
+          if (p.name) productSet.add(p.name);
+          if (p.category) categorySet.add(p.category);
+          if (p.brand) brandSet.add(p.brand);
+          if (p.compatibility) compSet.add(p.compatibility || '');
+        });
+      });
+
+      setSupplierOptions(Array.from(suppliersSet).filter(Boolean));
+      setProductNameOptions(Array.from(productSet).filter(Boolean));
+      setCategoryOptions(Array.from(categorySet).filter(Boolean));
+      setBrandOptions(Array.from(brandSet).filter(Boolean));
+      setCompatibilityOptions(Array.from(compSet).filter(Boolean));
+
       toast.success('Order uploaded successfully!');
       navigate('/order-history');
     } catch (error) {
@@ -288,15 +321,27 @@ const NewOrder = () => {
             />
           ))}
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={addProduct}
-            className="w-full border-dashed border-2 hover:border-primary hover:text-primary"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Product
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addProduct}
+              className="w-full border-dashed border-2 hover:border-primary hover:text-primary"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <input id="excelUpload" type="file" accept=".xlsx,.xls" onChange={handleExcelUpload} className="hidden" />
+              <Button type="button" onClick={() => document.getElementById('excelUpload')?.click()}>
+                <Upload className="w-4 h-4 mr-2" /> Upload Excel
+              </Button>
+              <Button type="button" onClick={downloadSampleExcel}>
+                <Download className="w-4 h-4 mr-2" /> Download Template
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="mt-4 p-4 bg-muted/20 rounded-lg">
@@ -314,43 +359,6 @@ const NewOrder = () => {
           <Send className="w-4 h-4 mr-2" />
           Upload Order
         </Button>
-
-        <div className="mt-8 pt-8 border-t">
-          <h3 className="text-lg font-semibold mb-4">Or Upload from Excel</h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={downloadSampleExcel}
-              className="w-full"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download Sample Template
-            </Button>
-            
-            <div className="relative">
-              <Input
-                id="excel-upload"
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleExcelUpload}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => document.getElementById('excel-upload')?.click()}
-                className="w-full"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Excel File
-              </Button>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground mt-3">
-            Download the sample template, fill in your products, and upload it to quickly add multiple products at once.
-          </p>
-        </div>
       </form>
     </div>
   );

@@ -17,6 +17,9 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/order-history', label: 'Order History', icon: History },
   ];
 
+  // whether current page is price list (used for contextual UI)
+  const isPriceList = location.pathname === '/price-list';
+
   const handleSearchToggle = () => {
     // dispatch a global event that PriceList listens to
     window.dispatchEvent(new CustomEvent('toggle-search'));
@@ -56,7 +59,6 @@ const Layout = ({ children }: LayoutProps) => {
 
               {/* Install PWA button */}
               <InstallPWA />
-
               {/* Search button available on all pages; PriceList listens for toggle-search event */}
               <button
                 aria-label="Toggle search"

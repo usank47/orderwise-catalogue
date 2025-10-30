@@ -1,116 +1,165 @@
 import { Order } from '@/types/order';
-import { databases, ID, Query, DATABASE_ID, ORDERS_COLLECTION_ID } from './appwrite';
 
-// UUID validation regex
-const isValidUUID = (id: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(id);
-};
+const ORDERS_KEY = 'orders';
+const DEMO_INITIALIZED_KEY = 'demo_initialized';
 
-// Normalize text to title case
-const toTitleCase = (text: string): string => {
-  if (!text) return '';
-  return text.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-};
+const DEMO_DATA: Order[] = [
+  {
+    id: 'demo-1',
+    date: '2024-01-15',
+    supplier: 'TechSupply Co.',
+    products: [
+      { id: 'p1', name: 'Product X', quantity: 10, price: 19.99, category: 'Electronics', brand: 'Brand A' },
+      { id: 'p2', name: 'Product Y', quantity: 5, price: 24.50, category: 'Electronics', brand: 'Brand B' },
+      { id: 'p3', name: 'Product Z', quantity: 8, price: 15.75, category: 'Electronics', brand: 'Brand A' },
+    ],
+    totalAmount: 446.65,
+    createdAt: new Date('2024-01-15T10:30:00').toISOString(),
+  },
+  {
+    id: 'demo-2',
+    date: '2024-01-20',
+    supplier: 'Global Parts Ltd.',
+    products: [
+      { id: 'p4', name: 'Product A', quantity: 15, price: 22.00, category: 'Accessories', brand: 'Brand C' },
+      { id: 'p5', name: 'Product B', quantity: 12, price: 18.50, category: 'Accessories', brand: 'Brand B' },
+    ],
+    totalAmount: 552.00,
+    createdAt: new Date('2024-01-20T14:45:00').toISOString(),
+  },
+  {
+    id: 'demo-3',
+    date: '2024-02-01',
+    supplier: 'TechSupply Co.',
+    products: [
+      { id: 'p6', name: 'Product C', quantity: 20, price: 21.25, category: 'Components', brand: 'Brand A' },
+      { id: 'p7', name: 'Product D', quantity: 7, price: 29.99, category: 'Components', brand: 'Brand D' },
+    ],
+    totalAmount: 634.93,
+    createdAt: new Date('2024-02-01T09:15:00').toISOString(),
+  },
+  {
+    id: 'demo-4',
+    date: '2024-02-10',
+    supplier: 'Prime Electronics',
+    products: [
+      { id: 'p8', name: 'Product E', quantity: 25, price: 16.50, category: 'Electronics', brand: 'Brand B' },
+      { id: 'p9', name: 'Product F', quantity: 10, price: 32.00, category: 'Accessories', brand: 'Brand C' },
+      { id: 'p10', name: 'Product G', quantity: 18, price: 27.75, category: 'Components', brand: 'Brand A' },
+    ],
+    totalAmount: 1252.00,
+    createdAt: new Date('2024-02-10T16:20:00').toISOString(),
+  },
+];
 
-export const saveOrder = async (order: Order): Promise<void> => {
-  try {
-    // Normalize data before saving
-    const normalizedOrder = {
-      ...order,
-      supplier: toTitleCase(order.supplier),
-      products: order.products.map(p => ({
-        ...p,
-        name: p.name?.trim() || '',
-        category: toTitleCase(p.category),
-        brand: toTitleCase(p.brand),
-        compatibility: p.compatibility?.trim() || '',
-      })),
-    };
-    
-    await databases.createDocument(
-      DATABASE_ID,
-      ORDERS_COLLECTION_ID,
-      normalizedOrder.id,
-      normalizedOrder
-    );
-  } catch (error) {
-    console.error('Error saving order:', error);
-    throw error;
+const initializeDemoData = (): void => {
+  const demoInitialized = localStorage.getItem(DEMO_INITIALIZED_KEY);
+  if (!demoInitialized) {
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(DEMO_DATA));
+    localStorage.setItem(DEMO_INITIALIZED_KEY, 'true');
   }
 };
 
-export const getOrders = async (): Promise<Order[]> => {
-  try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      ORDERS_COLLECTION_ID,
-      [Query.orderDesc('createdAt')]
-    );
-    
-    const orders = response.documents as any[];
-    
-    // Filter and normalize orders
-    return orders
-      .filter(order => isValidUUID(order.id))
-      .filter(order => order.products.every((p: any) => isValidUUID(p.id)))
-      .map(order => ({
-        ...order,
-        supplier: toTitleCase(order.supplier),
-        products: order.products.map((p: any) => ({
-          ...p,
-          name: p.name?.trim() || '',
-          category: toTitleCase(p.category),
-          brand: toTitleCase(p.brand),
-          compatibility: p.compatibility?.trim() || '',
-          price: Number(p.price),
-          quantity: Number(p.quantity),
-        })),
-        totalAmount: Number(order.totalAmount),
-      }));
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    return [];
+// Initialize demo data on module load
+initializeDemoData();
+
+// Native storage adapter (optional)
+import { initNativeStorage, isNativeAvailable, nativeGetOrders, nativeSaveOrders } from './nativeStorage';
+import { isSupabaseEnabled } from './supabase';
+import { pushToSupabase } from './sync';
+
+initNativeStorage().then(async () => {
+  if (isNativeAvailable()) {
+    try {
+      const native = await nativeGetOrders();
+      if (native && native.length === 0) {
+        const current = getOrders();
+        await nativeSaveOrders(current);
+      }
+    } catch (e) {
+      // ignore
+    }
   }
+}).catch(() => {});
+
+export const saveOrder = (order: Order): void => {
+  const orders = getOrders();
+  orders.push(order);
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  (async () => {
+    try {
+      if (isNativeAvailable()) {
+        const native = await nativeGetOrders();
+        if (native) {
+          native.push(order);
+          await nativeSaveOrders(native);
+        }
+      }
+
+      if (isSupabaseEnabled()) {
+        // push this order to Supabase in background
+        try { await pushToSupabase([order]); } catch (e) { console.error('pushToSupabase saveOrder failed', e); }
+      }
+    } catch (e) {
+      // ignore
+    }
+  })();
 };
 
-export const deleteOrder = async (orderId: string): Promise<void> => {
-  try {
-    await databases.deleteDocument(
-      DATABASE_ID,
-      ORDERS_COLLECTION_ID,
-      orderId
-    );
-  } catch (error) {
-    console.error('Error deleting order:', error);
-    throw error;
-  }
+export const getOrders = (): Order[] => {
+  const ordersJson = localStorage.getItem(ORDERS_KEY);
+  const local = ordersJson ? JSON.parse(ordersJson) : [];
+  (async () => {
+    try {
+      if (isNativeAvailable()) {
+        const native = await nativeGetOrders();
+        if (native && Array.isArray(native) && native.length > 0) {
+          localStorage.setItem(ORDERS_KEY, JSON.stringify(native));
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  })();
+  return local;
 };
 
-export const updateOrder = async (order: Order): Promise<void> => {
-  try {
-    // Normalize data before updating
-    const normalizedOrder = {
-      ...order,
-      supplier: toTitleCase(order.supplier),
-      products: order.products.map(p => ({
-        ...p,
-        name: p.name?.trim() || '',
-        category: toTitleCase(p.category),
-        brand: toTitleCase(p.brand),
-        compatibility: p.compatibility?.trim() || '',
-      })),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    await databases.updateDocument(
-      DATABASE_ID,
-      ORDERS_COLLECTION_ID,
-      order.id,
-      normalizedOrder
-    );
-  } catch (error) {
-    console.error('Error updating order:', error);
-    throw error;
+export const deleteOrder = (orderId: string): void => {
+  const orders = getOrders();
+  const filtered = orders.filter(order => order.id !== orderId);
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(filtered));
+  (async () => {
+    try {
+      if (isNativeAvailable()) {
+        await nativeSaveOrders(filtered);
+      }
+
+      if (isSupabaseEnabled()) {
+        try { await pushToSupabase(filtered); } catch (e) { console.error('pushToSupabase deleteOrder failed', e); }
+      }
+    } catch (e) {}
+  })();
+};
+
+export const updateOrder = (order: Order): void => {
+  const orders = getOrders();
+  const idx = orders.findIndex((o) => o.id === order.id);
+  if (idx >= 0) {
+    orders[idx] = order;
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  } else {
+    orders.push(order);
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
   }
+  (async () => {
+    try {
+      if (isNativeAvailable()) {
+        await nativeSaveOrders(orders);
+      }
+
+      if (isSupabaseEnabled()) {
+        try { await pushToSupabase([order]); } catch (e) { console.error('pushToSupabase updateOrder failed', e); }
+      }
+    } catch (e) {}
+  })();
 };

@@ -1,8 +1,8 @@
-import React from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
-import "./index.css";
-import { registerServiceWorker } from "./lib/pwa";
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
+import { registerServiceWorker } from './lib/pwa';
 
 // Reduce noisy console errors coming from injected third-party scripts and vite HMR ping failures.
 // Filter 'Failed to fetch' originating from known benign sources (FullStory, Vite client ping) so they don't spam dev console.
@@ -35,11 +35,25 @@ window.addEventListener('unhandledrejection', (ev: PromiseRejectionEvent) => {
   }
 });
 
-// Register service worker for PWA and render the app
-registerServiceWorker();
+(async function boot() {
+  try {
+    // Register service worker (PWA) if available
+    try { registerServiceWorker(); } catch (e) { /* ignore */ }
 
-createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+    // Attempt to perform an initial supabase pull if configured
+    const envHasSupabase = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+    if (envHasSupabase) {
+      // dynamic import to avoid loading supabase in dev if not configured
+      const sync = await import('./lib/sync');
+      try { await sync.pullFromSupabase(); } catch (e) { console.error('initial pull failed', e); }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+})();
