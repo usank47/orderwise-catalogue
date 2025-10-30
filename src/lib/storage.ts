@@ -95,6 +95,11 @@ export const saveOrder = (order: Order): void => {
           await nativeSaveOrders(native);
         }
       }
+
+      if (isSupabaseEnabled()) {
+        // push this order to Supabase in background
+        try { await pushToSupabase([order]); } catch (e) { console.error('pushToSupabase saveOrder failed', e); }
+      }
     } catch (e) {
       // ignore
     }
