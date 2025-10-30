@@ -156,6 +156,10 @@ export const updateOrder = (order: Order): void => {
       if (isNativeAvailable()) {
         await nativeSaveOrders(orders);
       }
+
+      if (isSupabaseEnabled()) {
+        try { await pushToSupabase([order]); } catch (e) { console.error('pushToSupabase updateOrder failed', e); }
+      }
     } catch (e) {}
   })();
 };
