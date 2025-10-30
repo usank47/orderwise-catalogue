@@ -35,12 +35,12 @@ alter table public.orders enable row level security;
 alter table public.order_products enable row level security;
 
 -- Development policies (allow public reads and writes). Replace or tighten these for production.
-create policy if not exists public_orders_dev_policy on public.orders
+create policy public_orders_dev_policy on public.orders
   for all
   using (true)
   with check (true);
 
-create policy if not exists public_order_products_dev_policy on public.order_products
+create policy public_order_products_dev_policy on public.order_products
   for all
   using (true)
   with check (true);
