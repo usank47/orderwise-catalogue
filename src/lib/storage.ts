@@ -133,6 +133,10 @@ export const deleteOrder = (orderId: string): void => {
       if (isNativeAvailable()) {
         await nativeSaveOrders(filtered);
       }
+
+      if (isSupabaseEnabled()) {
+        try { await pushToSupabase(filtered); } catch (e) { console.error('pushToSupabase deleteOrder failed', e); }
+      }
     } catch (e) {}
   })();
 };
